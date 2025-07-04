@@ -3,12 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts;
 
 namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher;
-
-public interface ITopicListener : IListener<ScheduleEventTrigger>
-{
-    string[] InterestedTopics { get; }
-}
-
 public class TopicAwareDispatcher : IDispatcher
 {
     private readonly IServiceProvider _serviceProvider;
