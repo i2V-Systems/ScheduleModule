@@ -1,0 +1,3 @@
+[submodule "CommonUtilityModule"]
+	path = CommonUtilityModule
+	url = https://github.com/i2V-Systems/CommonUtilityModule
