@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Contracts", "Scheduling.Contracts\Scheduling.Contracts.csproj", "{4AFA0D43-8B41-4B33-9D68-3B08D2E4E50D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Domain", "Scheduling.Domain\Scheduling.Domain.csproj", "{9CDB0914-B27F-46D0-948A-05B9F35919BD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Application", "Scheduling.Application\Scheduling.Application.csproj", "{71E6C706-62E2-415D-A50C-42B9DA8DBA8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Infrastructure", "Scheduling.Infrastructure\Scheduling.Infrastructure.csproj", "{148A8D48-7A86-4D16-8948-CD4D602D66A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Scheduling.Presentation", "Scheduling.Presentation\Scheduling.Presentation.csproj", "{3EFE41D3-7795-4E5D-B532-B0E6CF2ACB3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommonUtilityModule", "CommonUtilityModule\CommonUtilityModule.csproj", "{656E940C-4F30-4922-9A7C-5A640059C078}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4AFA0D43-8B41-4B33-9D68-3B08D2E4E50D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AFA0D43-8B41-4B33-9D68-3B08D2E4E50D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AFA0D43-8B41-4B33-9D68-3B08D2E4E50D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AFA0D43-8B41-4B33-9D68-3B08D2E4E50D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9CDB0914-B27F-46D0-948A-05B9F35919BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CDB0914-B27F-46D0-948A-05B9F35919BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CDB0914-B27F-46D0-948A-05B9F35919BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CDB0914-B27F-46D0-948A-05B9F35919BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71E6C706-62E2-415D-A50C-42B9DA8DBA8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71E6C706-62E2-415D-A50C-42B9DA8DBA8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71E6C706-62E2-415D-A50C-42B9DA8DBA8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71E6C706-62E2-415D-A50C-42B9DA8DBA8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{148A8D48-7A86-4D16-8948-CD4D602D66A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{148A8D48-7A86-4D16-8948-CD4D602D66A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{148A8D48-7A86-4D16-8948-CD4D602D66A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{148A8D48-7A86-4D16-8948-CD4D602D66A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EFE41D3-7795-4E5D-B532-B0E6CF2ACB3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EFE41D3-7795-4E5D-B532-B0E6CF2ACB3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EFE41D3-7795-4E5D-B532-B0E6CF2ACB3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EFE41D3-7795-4E5D-B532-B0E6CF2ACB3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{656E940C-4F30-4922-9A7C-5A640059C078}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{656E940C-4F30-4922-9A7C-5A640059C078}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{656E940C-4F30-4922-9A7C-5A640059C078}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{656E940C-4F30-4922-9A7C-5A640059C078}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

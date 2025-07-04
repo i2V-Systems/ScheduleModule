@@ -1,0 +1,13 @@
+/Scheduling.Application/bin
+/Scheduling.Application/obj
+/Scheduling.Contracts/bin
+/Scheduling.Contracts/obj
+/Scheduling.Presentation/bin
+/Scheduling.Presentation/obj
+/Scheduling.Infrastructure/bin
+/Scheduling.Infrastructure/obj
+/Scheduling.Domain/bin
+/Scheduling.Domain/obj
+/.idea/
+
+

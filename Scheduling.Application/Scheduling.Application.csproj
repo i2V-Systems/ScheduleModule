@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Application</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Scheduling.Domain\Scheduling.Domain.csproj" />
+        <ProjectReference Include="..\Scheduling.Contracts\Scheduling.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Coravel" Version="5.0.4" />
+      <PackageReference Include="Hangfire.AspNetCore" Version="1.7.33" />
+      <PackageReference Include="Hangfire.Core" Version="1.7.33" />
+      <PackageReference Include="Hangfire.PostgreSql.Npgsql5" Version="1.9.4" />
+      <PackageReference Include="Riok.Mapperly" Version="4.3.0-next.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.AspNetCore.Http.Abstractions">
+        <HintPath>C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\7.0.3\Microsoft.AspNetCore.Http.Abstractions.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>
