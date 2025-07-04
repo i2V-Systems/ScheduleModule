@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule;
 using Scheduling.Contracts.Schedule.DTOs;
 using Serilog;
@@ -32,6 +33,14 @@ namespace Presentation.Controllers
             IEnumerable<ScheduleDto> schedules =  _scheduleManager.GetAllCachedSchedules();
             return schedules;
         }
+        
+        [HttpGet("{id}")]
+        public  IEnumerable<ScheduleResourceDto> GetResourcesByScheduleId([FromRoute] Guid id)
+        {
+            IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetResourcesByScheduleId(id);
+            return resources;
+        }
+        
        
         [HttpGet("~/api/Schedules/GetAllResourceDetails")]
         public  IActionResult GetAllResourceDetails()
