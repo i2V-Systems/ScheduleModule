@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule;
 using Scheduling.Contracts.Schedule.DTOs;
@@ -14,18 +15,20 @@ namespace Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public  class SchedulingController : Controller
+    public  class SchedulingController : ControllerBase
     {
-        private readonly IScheduleManager _scheduleManager;
         private readonly ILogger<SchedulingController> _logger;
-        private readonly ResourceManager _resourceManager;
+        private readonly IResourceManager _resourceManager;
+        private readonly IScheduleManager _scheduleManager;
         
-        public SchedulingController(ILogger<SchedulingController> logger,IScheduleManager scheduleManager,ResourceManager resourceManager)
+        public SchedulingController(ILogger<SchedulingController> logger,IScheduleManager scheduleManager,IResourceManager resourceManager)
         {
             _logger = logger;
-            _scheduleManager = scheduleManager;
             _resourceManager = resourceManager;
+            _scheduleManager = scheduleManager;
         }
+
+       
 
         [HttpGet]
         public  IEnumerable<ScheduleDto> GetAll()

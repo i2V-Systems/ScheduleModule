@@ -1,14 +1,16 @@
 using CommonUtilityModule.CrudUtilities;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule.DTOs;
+using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Scheduling.Contracts.Schedule;
 
 
+[SingletonService]
 public interface IScheduleManager
 {
         // Initialization and lifecycle
-        Task InitializeAsync();
+         Task InitializeAsync();
         
         // Query methods for dictionary access
         IEnumerable<ScheduleDto> GetSchedulesByIds(IEnumerable<Guid> ids);

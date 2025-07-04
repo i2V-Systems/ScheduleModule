@@ -5,7 +5,6 @@ using Scheduling.Contracts.Schedule.DTOs;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 {
-    [ScopedService]
     public class ScheduledEventService
     {
         private ScheduleDto _schedule;
@@ -29,8 +28,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
             var currentTime = DateTime.Now;
             if (currentTime >= _schedule.StartDateTime && currentTime <= _schedule.EndDateTime)
             {
-                await ScheduleEventManager.scheduleEventService.ScheduleJob(HandleScheduledJob, schedule, scheduler);
-                await ScheduleEventManager.scheduleEventService.ScheduleJob(HandleScheduledJob, schedule, scheduler);
+                 ScheduleEventManager.scheduleEventService.ScheduleJob(HandleScheduledJob, schedule, scheduler);
             }
             else if (currentTime > _schedule.EndDateTime)
             {

@@ -20,7 +20,7 @@ internal class WeeklyScheduleStrategy : IScheduleJobStrategy
         return scheduleType ==ScheduleType.Weekly;
     }
 
-    public Task ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
+    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
     {
         var scheduledTask = schedule.SubType switch
         {
@@ -29,8 +29,6 @@ internal class WeeklyScheduleStrategy : IScheduleJobStrategy
             _ => ScheduleWeekends(taskToPerform, schedule, scheduler, eventExecutor)
         };
         scheduledTask?.Invoke();
-
-        return Task.CompletedTask;
     }
 
     private Action ScheduleSelectedDays(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)

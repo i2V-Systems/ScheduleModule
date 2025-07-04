@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Scheduling.Contracts.Schedule.Enums;
 
 namespace Infrastructure.Schedule;
+
+
 public class ScheduleRepository :IScheduleRepository
 {
     private readonly ScheduleDbContext _context;

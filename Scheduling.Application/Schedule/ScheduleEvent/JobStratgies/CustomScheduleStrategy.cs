@@ -19,10 +19,9 @@ internal class CustomScheduleStrategy : IScheduleJobStrategy
         return scheduleType == ScheduleType.Custom;
     }
 
-    public Task ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
+    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
     {
         // Custom scheduling logic here
         Console.WriteLine($"Executing custom schedule for {schedule.Id}");
-        return Task.CompletedTask;
     }
 }

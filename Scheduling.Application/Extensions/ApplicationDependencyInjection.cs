@@ -1,4 +1,5 @@
 using Application.AttachedResources.Service;
+using Application.Schedule;
 using Application.Schedule.ScheduleObj;
 using Domain.AttachedResources;
 using Domain.Schedule;
@@ -13,15 +14,10 @@ public static class ApplicationDependencyInjection
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
     {
-      // Core Application Services
-      services.AddSingleton<IScheduleCRUDService, ScheduleCrudService>();
-      services.AddSingleton<IScheduleResourceService, ResourceMappingService>();
-      services.AddSingleton<IScheduleManager, ScheduleManager>();
-
-     
-        
-        services.AddSchedulingScheduler(configuration);
-
+       // Core Application Services
+       services.AddSingleton<IScheduleManager, ScheduleManager>();
+      
+       services.AddSchedulingScheduler(configuration);
         // Auto-register services with attributes (your current approach)
         services.AddServicesOfType<IScopedService>();
         services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();

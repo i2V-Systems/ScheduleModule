@@ -9,7 +9,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\CommonUtilityModule\CommonUtilityModule.csproj" />
-        <ProjectReference Include="..\CommonUtilityModule\CommonUtilityModule.csproj" />
     </ItemGroup>
 
     <ItemGroup>

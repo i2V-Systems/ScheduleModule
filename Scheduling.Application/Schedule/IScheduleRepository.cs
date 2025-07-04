@@ -1,6 +1,7 @@
 
 
 using Scheduling.Contracts.Schedule.Enums;
+using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule;
 

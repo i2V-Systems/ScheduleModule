@@ -21,17 +21,17 @@ internal class DailyScheduleStrategy : IScheduleJobStrategy
         return scheduleType == ScheduleType.Daily;
     }
 
-    public Task ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
+    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
     {
         if (schedule.SubType == ScheduleSubType.Every)
         {
             // TODO: Implement every N days logic
             ScheduleStartAndEndEventsEvery(taskToPerform, schedule, scheduler, eventExecutor);
-            return Task.CompletedTask;
+           
         }
 
         ScheduleStartAndEndEvents(taskToPerform, schedule, scheduler,eventExecutor);
-        return Task.CompletedTask;
+        
     }
 
     private void ScheduleStartAndEndEvents(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler,ISchedulerService eventExecutor)

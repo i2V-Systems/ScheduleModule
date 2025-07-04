@@ -65,12 +65,12 @@ public class CoravelSchedulerService : ISchedulerService
             Log.Error($"Error in end event for schedule {schedule.Id}", ex);
         }
     }
-    public  Task ScheduleJob(Action<Guid,ScheduleEventType> taskToPerform,ScheduleDto schedule,IUnifiedScheduler scheduler)
+    public void  ScheduleJob(Action<Guid,ScheduleEventType> taskToPerform,ScheduleDto schedule,IUnifiedScheduler scheduler)
     {
         try
         {
-            var strategy = _strategyFactory.GetStrategy(schedule.Type);
-            return strategy.ScheduleJob(taskToPerform, schedule, scheduler,this);
+            var strategy = _strategyFactory.GetStrategy(schedule.Type); 
+            strategy.ScheduleJob(taskToPerform, schedule, scheduler,this);
         }
         catch (Exception ex)
         {

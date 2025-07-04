@@ -4,7 +4,7 @@ using Scheduling.Contracts.Schedule.Enums;
 namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 {
 
-    public class CronExpressionBuilder
+    internal class CronExpressionBuilder
     {
         public static string BuildCronExpression(List<Days> selectedDays, DateTime timeString)
         {

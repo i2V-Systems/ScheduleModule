@@ -12,5 +12,5 @@ internal interface IScheduleJobStrategy
 {
         ScheduleTypeInfo SupportedType { get; }
         bool CanHandle(ScheduleType scheduleType);
-        Task ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor); 
+        void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor); 
 }

@@ -17,39 +17,31 @@ using Serilog;
 
 namespace Application.Schedule.ScheduleObj
 {
-    public class ScheduleManager :IScheduleManager
+    internal class ScheduleManager : IScheduleManager
     {
-        private readonly  IServiceProvider _serviceProvider;
-        private readonly  IUnifiedScheduler _scheduler;
-        private readonly  IConfiguration _configuration;
-        
-        private readonly IScheduleCRUDService _crudService;
-        private readonly ScheduledEventService _scheduleEventService;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IUnifiedScheduler _scheduler;
+        private readonly IConfiguration _configuration;
         private readonly ResourceManager _resourceManager;
-        
-        public  ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
-        public  ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
-        
-        public ScheduleManager(IConfiguration configuration,
+
+        public ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
+        public ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
+
+        public   ScheduleManager(IConfiguration configuration,
             IUnifiedScheduler scheduler,
             IDispatcher dispatcher,
-            IServiceProvider serviceProvider,
-            IScheduleCRUDService scheduleCrudService,
-            ScheduledEventService scheduledEventService
-           
-            )
+            IServiceProvider serviceProvider
+        )
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-
             _resourceManager = serviceProvider.GetRequiredService<ResourceManager>();
-            _scheduleEventService = scheduledEventService;
-            _crudService = scheduleCrudService;
             
-            InitializeAsync();
+
+             InitializeAsync();
         }
-        
+
         // Query methods implementation
         public IEnumerable<ScheduleDto> GetSchedulesByIds(IEnumerable<Guid> ids)
         {
@@ -58,18 +50,18 @@ namespace Application.Schedule.ScheduleObj
                 .ToList();
         }
 
-        public  ScheduleDto GetScheduleFromCache(Guid id)
+        public ScheduleDto GetScheduleFromCache(Guid id)
         {
             return Schedules.TryGetValue(id, out var schedule) ? schedule : null;
         }
 
-        
+
         public ScheduleAllDetails GetScheduleDetailsFromCache(Guid id)
         {
             return ScheduleDetailsMap.TryGetValue(id, out var details) ? details : null;
         }
 
-        
+
         // Cache status methods
         public bool IsScheduleLoaded(Guid scheduleId)
         {
@@ -80,6 +72,7 @@ namespace Application.Schedule.ScheduleObj
         {
             return Schedules.Count;
         }
+
         public IEnumerable<ScheduleDto> GetAllCachedSchedules()
         {
             return Schedules.Values.ToList();
@@ -94,51 +87,58 @@ namespace Application.Schedule.ScheduleObj
             // Reload from database
             await InitializeAsync();
         }
-        
+
         public async Task InitializeAsync()
         {
-            ScheduleEventManager.Init(_serviceProvider,_configuration);//TODO 
+            var _crudService = _serviceProvider.GetRequiredService<ScheduleCrudService>(); 
+            ScheduleEventManager.Init(_serviceProvider, _configuration); //TODO 
             var allSchedules = await _crudService.GetAllAsync();
-            foreach (var schedule in  allSchedules)
+            foreach (var schedule in allSchedules)
             {
                 Schedules.TryAdd(schedule.Id, schedule);
             }
+
             UpdateScheduleDetails(Schedules.Values);
-            executeLoadedTasks();
+            ScheduleEventManager.executeLoadedTasks(Schedules,_scheduler);
         }
-        
-        public  ScheduleDto Get(Guid id) =>
+
+        public ScheduleDto Get(Guid id) =>
             Schedules.TryGetValue(id, out var schedule) ? schedule : null;
 
         public ScheduleAllDetails GetDetailed(Guid id)
         {
-           return  ScheduleDetailsMap.TryGetValue(id, out var schedule) ? schedule : null;
+            return ScheduleDetailsMap.TryGetValue(id, out var schedule) ? schedule : null;
         }
-      
-        public async Task<Guid> CreateScheduleAsync(ScheduleDto schedule, string userId = null) {
-            var id= await _crudService.AddAsync(schedule);
-            AddToMemory(id,schedule);
-            List<ScheduleResourceDto> resources =  _resourceManager.GetResourcesByScheduleId(id).ToList();
-            await  _scheduleEventService.ExecuteAsync(schedule, _scheduler, resources);
+
+        public async Task<Guid> CreateScheduleAsync(ScheduleDto schedule, string userId = null)
+        {
+            var _crudService = _serviceProvider.GetRequiredService<ScheduleCrudService>(); 
+            var id = await _crudService.AddAsync(schedule);
+            AddToMemory(id, schedule);
+            List<ScheduleResourceDto> resources = _resourceManager.GetResourcesByScheduleId(id).ToList();
+            await ScheduleEventManager.ExecuteAsync(schedule, _scheduler, resources);
             return id;
         }
-        
+
         public async Task UpdateScheduleAsync(ScheduleDto schedule)
-        {
+        {    
+            var _crudService = _serviceProvider.GetRequiredService<ScheduleCrudService>(); 
             await _crudService.UpdateAsync(schedule);
             UpdateInMemory(schedule);
-            _scheduleEventService.UpdateAsync(schedule);
+            await  ScheduleEventManager.UpdateAsync(schedule);
         }
+
         public async Task<bool> DeleteScheduleAsync(Guid id)
         {
-            await  _crudService.DeleteAsync(id);
+            var _crudService = _serviceProvider.GetRequiredService<ScheduleCrudService>(); 
+            await _crudService.DeleteAsync(id);
             RemoveFromMemory(id);
-            _scheduleEventService.DeleteAsync(id);
+            await ScheduleEventManager.DeleteAsync(id);
             ScheduleEventManager.scheduleEventService.UnscheduleJob(id, _scheduler);
             return true;
         }
-        
-        public  IEnumerable<ScheduleAllDetails> GetScheduleWithAllDetails(
+
+        public IEnumerable<ScheduleAllDetails> GetScheduleWithAllDetails(
             string userName
         )
         {
@@ -148,6 +148,7 @@ namespace Application.Schedule.ScheduleObj
                 {
                     UpdateScheduleDetails(Schedules.Values);
                 }
+
                 return userName == "admin"
                     ? ScheduleDetailsMap.Values
                     : ImmutableList<ScheduleAllDetails>.Empty;
@@ -159,14 +160,15 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public  IEnumerable<ScheduleDto> GetAllSchedules()
+        public IEnumerable<ScheduleDto> GetAllSchedules()
         {
             try
             {
                 if (ScheduleDetailsMap.IsEmpty)
                 {
-                     UpdateScheduleDetails(Schedules.Values);
+                    UpdateScheduleDetails(Schedules.Values);
                 }
+
                 return Schedules.Values;
             }
             catch (Exception ex)
@@ -175,23 +177,25 @@ namespace Application.Schedule.ScheduleObj
                 return null;
             }
         }
-        
+
         public async Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids)
         {
             foreach (var id in ids)
             {
                 if (Schedules.TryGetValue(id, out var schedule))
                 {
-                    await  _crudService.DeleteAsync(id);
+                    var _crudService = _serviceProvider.GetRequiredService<ScheduleCrudService>(); 
+                    await _crudService.DeleteAsync(id);
                     RemoveFromMemory(id);
-                    _scheduleEventService.DeleteAsync(id);
+                    await ScheduleEventManager.DeleteAsync(id);
                     ScheduleEventManager.scheduleEventService.UnscheduleJob(id, _scheduler);
                 }
             }
         }
-        
 
-        public async Task SendCrudDataToClientAsync(CrudMethodType method, Dictionary<string, dynamic> resources, List<string> skipUserIds = null,
+
+        public async Task SendCrudDataToClientAsync(CrudMethodType method, Dictionary<string, dynamic> resources,
+            List<string> skipUserIds = null,
             List<string> targetUserIds = null)
         {
             await CrudManager.SendCrudDataToClient(
@@ -200,13 +204,11 @@ namespace Application.Schedule.ScheduleObj
                 resources,
                 skipUserIds,
                 targetUserIds
-                
             );
         }
 
-        
-        
-        private  void  UpdateScheduleDetails(IEnumerable<ScheduleDto> schedules)
+
+        private void UpdateScheduleDetails(IEnumerable<ScheduleDto> schedules)
         {
             foreach (var schedule in schedules)
             {
@@ -214,7 +216,8 @@ namespace Application.Schedule.ScheduleObj
                 AddOrUpdateScheduleDetails(details);
             }
         }
-        public  void AddOrUpdateScheduleDetails(ScheduleAllDetails details)
+
+        public void AddOrUpdateScheduleDetails(ScheduleAllDetails details)
         {
             try
             {
@@ -225,10 +228,10 @@ namespace Application.Schedule.ScheduleObj
                 Log.Error("[ScheduleManager][AddOrUpdateScheduleDetails] : {Message}", ex.Message);
             }
         }
-           
-        
+
+
         //memory functions 
-        public  void UpdateInMemory(ScheduleDto schedule)
+        public void UpdateInMemory(ScheduleDto schedule)
         {
             if (Schedules.TryGetValue(schedule.Id, out var existing))
             {
@@ -243,30 +246,22 @@ namespace Application.Schedule.ScheduleObj
                 AddOrUpdateScheduleDetails(updatedDetails);
             }
         }
-        public  void RemoveFromMemory(Guid id)
+
+        public void RemoveFromMemory(Guid id)
         {
             Schedules.TryRemove(id, out _);
-           _resourceManager.RemoveFromMemory(id);
+            _resourceManager.RemoveFromMemory(id);
             ScheduleDetailsMap.TryRemove(id, out _);
         }
 
-      
-        public void AddToMemory(Guid id,ScheduleDto schedule)
+
+        public void AddToMemory(Guid id, ScheduleDto schedule)
         {
             Schedules.TryAdd(id, schedule);
             AddOrUpdateScheduleDetails(new ScheduleAllDetails { schedules = schedule });
         }
-        
+
         //event fun
-        private async Task  executeLoadedTasks()
-        {
-     
-            var tasks = Schedules.Select(item =>
-            {      
-                List<ScheduleResourceDto> resources =  _resourceManager.GetResourcesByScheduleId(item.Value.Id).ToList();
-                return _scheduleEventService.ExecuteAsync(item.Value, _scheduler,resources);
-            });
-            await Task.WhenAll(tasks);
-        }
+      
     }
 }

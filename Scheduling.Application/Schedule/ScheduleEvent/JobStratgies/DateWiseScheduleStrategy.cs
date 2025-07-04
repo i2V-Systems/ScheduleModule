@@ -20,7 +20,7 @@ internal class DateWiseScheduleStrategy : IScheduleJobStrategy
         return scheduleType == ScheduleType.DateWise;
     }
 
-    public Task ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
+    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
     {
         var startTime = schedule.StartDateTime;
         var endTime = schedule.EndDateTime;
@@ -39,7 +39,6 @@ internal class DateWiseScheduleStrategy : IScheduleJobStrategy
             endTime.Minute,
             endTime.Date 
         );
-        return Task.CompletedTask;
     }
 }
     

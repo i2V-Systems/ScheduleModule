@@ -1,4 +1,6 @@
 using Application.Schedule;
+using Domain.AttachedResources;
+using Infrastructure.AttachedResources;
 using Infrastructure.Schedule;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,9 +23,6 @@ public static class InfrastructureDependencyInjection
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .EnableSensitiveDataLogging();
         }, ServiceLifetime.Transient);
-
-        // Repositories
-        services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
         return services;
     }

@@ -72,12 +72,12 @@ public class HangFireSchedulerService :ISchedulerService
         }
     }
 
-    public Task ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler)
+    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler)
     {
         try
         {
             var strategy = _strategyFactory.GetStrategy(schedule.Type);
-            return strategy.ScheduleJob(taskToPerform, schedule, scheduler, this);
+            strategy.ScheduleJob(taskToPerform, schedule, scheduler, this);
         }
         catch (Exception ex)
         {

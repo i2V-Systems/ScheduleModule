@@ -1,7 +1,9 @@
 
 using Domain.AttachedResources;
+using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Domain.AttachedResources;
+
 public interface IScheduleResourceRepository
 {
     Task<ScheduleResourceMapping?> GetByIdAsync(Guid id);

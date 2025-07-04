@@ -1,6 +1,7 @@
 using Coravel.Events.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts;
+using Scheduling.Contracts.Schedule;
 
 namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher;
 public class TopicAwareDispatcher : IDispatcher

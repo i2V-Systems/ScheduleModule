@@ -5,7 +5,7 @@ using Scheduling.Contracts.Schedule.DTOs;
 
 namespace Application.Schedule.ScheduleObj
 {
-    public class ScheduleCrudService : IScheduleCRUDService
+    internal class ScheduleCrudService : IScheduleCRUDService
     {
         private readonly IScheduleRepository _schedulesRepository;
      
