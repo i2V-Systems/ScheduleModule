@@ -1,28 +1,33 @@
-﻿using Domain.Exceptions;
+﻿using AutoMapper;
+using Domain.Exceptions;
 using Domain.Schedule;
 using Microsoft.Extensions.Logging;
 using Scheduling.Contracts.Schedule.DTOs;
+using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleObj
 {
+    [TransientService]
     internal class ScheduleCrudService : IScheduleCRUDService
     {
-        private readonly IScheduleRepository _schedulesRepository;
+        private readonly IMapper _mapper;
+        private IScheduleRepository<Domain.Schedule.Schedule> _schedulesRepository;
      
         private readonly ILogger<ScheduleCrudService> _logger;
-        public ScheduleCrudService(
-           IScheduleRepository scheduleRepository,ILogger<ScheduleCrudService> logger)
+        public ScheduleCrudService(IMapper mapper,
+           IScheduleRepository<Domain.Schedule.Schedule> scheduleRepository,ILogger<ScheduleCrudService> logger)
         {
             _logger = logger?? throw new ArgumentNullException(nameof(logger));
             _schedulesRepository = scheduleRepository;
+            _mapper = mapper;
         }
 
         public async Task<ScheduleDto> GetByIdAsync(Guid id)
         {
             try
             {
-                var entity = await _schedulesRepository.GetByIdAsync(id);
-                return entity?.ToDto();
+                var entity = await _schedulesRepository.GetAsync(id);
+                return _mapper.Map<ScheduleDto>(entity);
             }
             catch (Exception ex)
             {
@@ -36,7 +41,7 @@ namespace Application.Schedule.ScheduleObj
             try
             {
                 var entities = await _schedulesRepository.GetAllAsync();
-                return entities.Select(e => e.ToDto());
+                return entities.Select(e => _mapper.Map<ScheduleDto>(e));
             }
             catch (Exception ex)
             {
@@ -45,19 +50,18 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task<Guid> AddAsync(ScheduleDto  dto, string userName = "")
+        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto, string userName = "")
         {
             try
             {
                 _logger.LogInformation("Creating schedule {ScheduleName} by {UserName}", dto.Name, userName);
 
-                // Convert DTO to domain entity
-                var entity = dto.ToDomain();
-                
-                await _schedulesRepository.AddAsync(entity);
+                var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
+                await _schedulesRepository.AddAsync(schedule);
 
-                _logger.LogInformation("Schedule created with ID {ScheduleId}", entity.Id);
-                return entity.Id;
+                _logger.LogInformation("Schedule created with ID {ScheduleId}", schedule.Id);
+                dto= _mapper.Map<ScheduleDto>(schedule);
+                return dto;
             }
             catch (Exception ex)
             {
@@ -72,11 +76,11 @@ namespace Application.Schedule.ScheduleObj
             {
                 _logger.LogInformation("Deleting schedule {ScheduleId} by {UserName}", entityId, userName);
 
-                var entity = await _schedulesRepository.GetByIdAsync(entityId);
+                var entity = await _schedulesRepository.GetAsync(entityId);
                 if (entity == null)
                     throw new NotFoundException($"Schedule with ID {entityId} not found");
 
-                await _schedulesRepository.DeleteAsync(entityId);
+                _schedulesRepository.Delete(entity);
 
                 _logger.LogInformation("Schedule {ScheduleId} deleted successfully", entityId);
             }
@@ -92,13 +96,13 @@ namespace Application.Schedule.ScheduleObj
             try
             {
                 _logger.LogInformation("Updating schedule {ScheduleId} by {UserName}", dto.Id, userName);
-                var existingEntity = await _schedulesRepository.GetByIdAsync(dto.Id);
+                var existingEntity = await _schedulesRepository.GetAsync(dto.Id);
                 if (existingEntity == null)
                     throw new NotFoundException($"Schedule with ID {dto.Id} not found");
 
                 // Update domain entity from DTO
-                existingEntity.UpdateFromDto(dto);
-                await _schedulesRepository.UpdateAsync(existingEntity);
+                var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
+                _schedulesRepository.Update(schedule);
 
                 _logger.LogInformation("Schedule {ScheduleId} updated successfully", dto.Id);
             }

@@ -4,12 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleEvent.SchedulerServices;
 
-[ScopedService]
+[TransientService]
 public class HangFireSchedulerService :ISchedulerService
 {
     private  JobStrategyHelper _strategyFactory;

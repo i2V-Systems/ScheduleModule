@@ -5,12 +5,13 @@ using Application.Schedule.ScheduleEvent.SchedulerServices;
 using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 
 namespace Application.Schedule.ScheduleEvent.JobStratgies;
 
-[ScopedService]
+[TransientService]
 [ScheduleStrategy(ScheduleType.Weekly)]
 internal class WeeklyScheduleStrategy : IScheduleJobStrategy
 {

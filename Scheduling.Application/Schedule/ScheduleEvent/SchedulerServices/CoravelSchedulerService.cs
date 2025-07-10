@@ -1,16 +1,16 @@
 ﻿using Application.Schedule.ScheduleEvent.JobStratgies.helper;
-using Application.Schedule.ScheduleEvent.Scheduler;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 
 namespace Application.Schedule.ScheduleEvent.SchedulerServices;
 
-[ScopedService]
+[TransientService]
 public class CoravelSchedulerService : ISchedulerService
 {
     private  JobStrategyHelper _strategyFactory;

@@ -1,6 +1,6 @@
 using Coravel;
 
-namespace Application.Schedule.ScheduleEvent.Scheduler;
+namespace Scheduling.Contracts.Schedule.ScheduleEvent;
 
 public interface IUnifiedScheduler
 {

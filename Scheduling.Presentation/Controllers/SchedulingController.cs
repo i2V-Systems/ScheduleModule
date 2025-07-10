@@ -1,8 +1,7 @@
-﻿
-using Application.AttachedResources;
-using CommonUtilityModule.CrudUtilities;
+﻿using CommonUtilityModule.CrudUtilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Scheduling.Contracts.AttachedResources;
@@ -21,37 +20,39 @@ namespace Presentation.Controllers
         private readonly IResourceManager _resourceManager;
         private readonly IScheduleManager _scheduleManager;
         
-        public SchedulingController(ILogger<SchedulingController> logger,IScheduleManager scheduleManager,IResourceManager resourceManager)
+        public SchedulingController( 
+            ILogger<SchedulingController> logger,
+            IScheduleManager scheduleManager,
+            IResourceManager resourceManager)
         {
             _logger = logger;
-            _resourceManager = resourceManager;
             _scheduleManager = scheduleManager;
+            _resourceManager = resourceManager;
         }
-
-       
-
+        
         [HttpGet]
+        
         public  IEnumerable<ScheduleDto> GetAll()
         {
             IEnumerable<ScheduleDto> schedules =  _scheduleManager.GetAllCachedSchedules();
             return schedules;
         }
         
-        [HttpGet("{id}")]
+        [HttpGet("resources/{id}")]
         public  IEnumerable<ScheduleResourceDto> GetResourcesByScheduleId([FromRoute] Guid id)
         {
             IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetResourcesByScheduleId(id);
             return resources;
         }
-        
        
-        [HttpGet("~/api/Schedules/GetAllResourceDetails")]
-        public  IActionResult GetAllResourceDetails()
+        [HttpGet]
+        [Route("GetAllResourceDetails")]
+        public async Task<IActionResult> GetAllResourceDetails()
         { 
             try
             {
                 HttpContext.Request.Headers.TryGetValue("Username", out StringValues UserName);
-                return Ok( _resourceManager.GetAllCachedResources());
+                return Ok(await  _scheduleManager.GetScheduleWithAllDetails(UserName));
             }
             catch (Exception ex)
             {
@@ -102,7 +103,7 @@ namespace Presentation.Controllers
                     CrudMethodType.Add,
                     objectToSend
                 );
-                return Ok(schedule);
+                return Ok(schedulesource.schedules);
             }
             catch (System.Exception ex)
             {
@@ -154,13 +155,13 @@ namespace Presentation.Controllers
             }
             try
             {
-                ScheduleAllDetails scheduleWithAllDetails = _scheduleManager.GetScheduleDetailsFromCache(id);
+                ScheduleAllDetails? scheduleWithAllDetails = _scheduleManager.GetScheduleDetailsFromCache(id);
                 _scheduleManager.DeleteScheduleAsync(id);
                 var objectToSend = new Dictionary<string, dynamic>()
                 {
                     {
                         "scheduleAllDetailsList",
-                        new List<ScheduleAllDetails>() { scheduleWithAllDetails }
+                        new List<ScheduleAllDetails?>() { scheduleWithAllDetails }
                     },
                 };
                 await _scheduleManager.SendCrudDataToClientAsync(
@@ -189,11 +190,17 @@ namespace Presentation.Controllers
             {
                 return BadRequest();
             }
-
-            IEnumerable<ScheduleAllDetails> scheduleAllDetailsList = _scheduleManager.GetScheduleWithAllDetails(userName);
-           
+            List<ScheduleAllDetails?> scheduleAllDetailsList =
+                new List<ScheduleAllDetails?>();
+            foreach (var id in ScheduleToBeDeleted)
+            {
+                scheduleAllDetailsList.Add(
+                    _scheduleManager.GetScheduleDetailsFromCache(id)
+                );
+            }
             
             await _scheduleManager.DeleteMultipleSchedulesAsync(ScheduleToBeDeleted);
+
             var objectToSend = new Dictionary<string, dynamic>()
             {
                 { "scheduleAllDetailsList", scheduleAllDetailsList },

@@ -4,12 +4,13 @@ using Application.Schedule.ScheduleEvent.SchedulerServices;
 using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 
 namespace Application.Schedule.ScheduleEvent.JobStratgies;
 // Example of how to add a new strategy in the future
-[ScopedService]
+[TransientService]
 [ScheduleStrategy(ScheduleType.Custom)]
 internal class CustomScheduleStrategy : IScheduleJobStrategy
 {

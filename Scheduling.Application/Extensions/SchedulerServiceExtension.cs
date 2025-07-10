@@ -4,6 +4,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 
 namespace Application.Extensions;
 

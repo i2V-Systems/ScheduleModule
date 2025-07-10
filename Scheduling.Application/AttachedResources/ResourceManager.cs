@@ -70,8 +70,9 @@ internal class ResourceManager :IResourceManager
         {
             try
             {
-                var _crudService = _serviceProvider.GetRequiredService<ResourceMappingService>(); 
-                var allDetails =await  _crudService.GetAllResourceMappingAsync();
+                using var scope = _serviceProvider.CreateScope();
+                var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+                var allDetails =await  crudService.GetAllResourceMappingAsync();
                 foreach (var map in allDetails)
                 {
                     ScheduleResourcesMap.TryAdd(map.Id, map);
@@ -90,8 +91,9 @@ internal class ResourceManager :IResourceManager
 
         public async Task AddScheduleResourceMap(ScheduleResourceDto map)
         {  
-            var _crudService = _serviceProvider.GetRequiredService<ResourceMappingService>(); 
-            await _crudService.AddResourceMappingAsync(map);
+            using var scope = _serviceProvider.CreateScope();
+            var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+            await crudService.AddResourceMappingAsync(map);
             ScheduleResourcesMap.TryAdd(map.ScheduleId, map);
         }
 }

@@ -1,9 +1,7 @@
 ﻿
-using Application.Schedule.ScheduleEvent.Scheduler;
-using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.DTOs;
 
-namespace Application.Schedule.ScheduleEvent.SchedulerServices;
+namespace Scheduling.Contracts.Schedule.ScheduleEvent;
 public interface  ISchedulerService
 { 
     public  Task InitService();

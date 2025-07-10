@@ -1,5 +1,6 @@
 
 using Hangfire;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 
 
 namespace Application.Schedule.ScheduleEvent.Scheduler;
@@ -14,7 +15,7 @@ public class HangfireUnifiedScheduler: IUnifiedScheduler
     }
     public void ScheduleDaily(string jobId, Action action, int hour, int minute)
     {
-        _recurringJobManager.AddOrUpdate(jobId, ()=> action(), Cron.Daily(hour,minute));
+        _recurringJobManager.AddOrUpdate(jobId, ()=>action(), Cron.Daily(hour,minute));
     }
 
     public void ScheduleSelectedDays(string jobId, Action action, int hour, int minute,string cronn)

@@ -14,8 +14,8 @@ public interface IScheduleManager
         
         // Query methods for dictionary access
         IEnumerable<ScheduleDto> GetSchedulesByIds(IEnumerable<Guid> ids);
-        ScheduleDto GetScheduleFromCache(Guid id);
-        ScheduleAllDetails GetScheduleDetailsFromCache(Guid id);
+        ScheduleDto? GetScheduleFromCache(Guid id);
+        ScheduleAllDetails? GetScheduleDetailsFromCache(Guid id);
         
         // Cache status methods
         bool IsScheduleLoaded(Guid scheduleId);
@@ -33,11 +33,11 @@ public interface IScheduleManager
         Task<bool> DeleteScheduleAsync(Guid id);
     
         // Complex queries
-        IEnumerable<ScheduleAllDetails> GetScheduleWithAllDetails(string userName);
+        Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(string userName);
         IEnumerable<ScheduleDto> GetAllSchedules();
       
         // Memory management operations
-        void AddToMemory(Guid id, ScheduleDto schedule);
+        void AddToMemory(ScheduleDto schedule);
         void UpdateInMemory(ScheduleDto schedule);
         void RemoveFromMemory(Guid id);
         void AddOrUpdateScheduleDetails(ScheduleAllDetails details);

@@ -16,7 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Coravel" Version="5.0.4" />
+        <PackageReference Include="AutoMapper" Version="12.0.1" />
+        <PackageReference Include="Coravel" Version="5.0.4" />
     </ItemGroup>
 
 </Project>

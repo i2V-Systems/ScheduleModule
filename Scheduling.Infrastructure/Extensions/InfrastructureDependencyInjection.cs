@@ -1,8 +1,8 @@
+
 using Application.Schedule;
-using Domain.AttachedResources;
-using Infrastructure.AttachedResources;
 using Infrastructure.Schedule;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +14,13 @@ public static class InfrastructureDependencyInjection
         this IServiceCollection services, 
         IConfiguration configuration)
     {
+        var mapperConfig = new MapperConfiguration(mc =>
+        {
+            mc.AddProfile(new MappingProfile());
+        });
+
+        IMapper mapper = mapperConfig.CreateMapper();
+        services.AddSingleton(mapper);
         // Database Context
         services.AddDbContext<ScheduleDbContext>(options =>
         {
@@ -22,8 +29,11 @@ public static class InfrastructureDependencyInjection
                     b => b.MigrationsAssembly("DataLayer"))
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .EnableSensitiveDataLogging();
-        }, ServiceLifetime.Transient);
-
+        }, ServiceLifetime.Scoped);
+        
+        // Register open generic - this works for any T
+        services.AddTransient(typeof(IScheduleRepository<>), typeof(ScheduleRepository<>));
+     
         return services;
     }
 }

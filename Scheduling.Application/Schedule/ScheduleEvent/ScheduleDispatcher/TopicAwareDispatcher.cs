@@ -2,8 +2,13 @@ using Coravel.Events.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
+using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher;
+
+
+[TransientService]
 public class TopicAwareDispatcher : IDispatcher
 {
     private readonly IServiceProvider _serviceProvider;
@@ -17,6 +22,7 @@ public class TopicAwareDispatcher : IDispatcher
     private void RegisterTopicListeners()
     {
         Dictionary<string, List<ITopicListener>> _topicSubscriptions = new();
+       
         var topicListeners = _serviceProvider.GetServices<ITopicListener>();
         foreach (var listener in topicListeners)
         {

@@ -10,14 +10,16 @@
     <ItemGroup>
       <ProjectReference Include="..\Scheduling.Application\Scheduling.Application.csproj" />
       <ProjectReference Include="..\Scheduling.Domain\Scheduling.Domain.csproj" />
+        <ProjectReference Include="..\Scheduling.Contracts\Scheduling.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.11" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.11" />
-      <PackageReference Include="NETCore.MailKit" Version="2.1.0" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
+        <PackageReference Include="AutoMapper" Version="12.0.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.11" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.11" />
+        <PackageReference Include="NETCore.MailKit" Version="2.1.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
     </ItemGroup>
 
 </Project>

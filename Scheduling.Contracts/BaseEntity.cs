@@ -1,17 +1,16 @@
+using CommonUtilityModule.Models;
 using MassTransit;
 
-namespace Domain;
+namespace Scheduling.Contracts;
 
-public abstract class BaseEntity
+
+public abstract class BaseEntity : IEntityBase
 {
-    public Guid Id { get; protected set; }
-    public DateTime CreatedAt { get; protected set; }
-    public DateTime? UpdatedAt { get; protected set; }
+    public Guid Id { get; set; }
     
     protected BaseEntity()
     {
         Id =  NewId.NextSequentialGuid();
-        CreatedAt = DateTime.UtcNow;
     }
     
     public static Guid GenerateGuid()
@@ -22,12 +21,6 @@ public abstract class BaseEntity
     protected BaseEntity(Guid id)
     {
         Id = id;
-        CreatedAt = DateTime.UtcNow;
-    }
-
-    public void UpdateModifiedDate()
-    {
-        UpdatedAt = DateTime.UtcNow;
     }
 
     public override bool Equals(object? obj)

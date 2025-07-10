@@ -1,33 +1,34 @@
 using Domain.Exceptions;
+using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.Enums;
 
 namespace Domain.Schedule;
 
 public class Schedule : BaseEntity
 {
-    public string Name { get; private set; }
-    public ScheduleType Type { get; private set; }
-    public ScheduleSubType? SubType { get; private set; }
-    public string Details { get; private set; }
+    public string Name { get;  set; }
+    public ScheduleType Type { get;  set; }
+    public ScheduleSubType? SubType { get;  set; }
+    public string Details { get;  set; }
     private DateTime _startDateTime;
     private DateTime _endDateTime;
-    public int? NoOfDays { get; private set; }
-    public List<Days> StartDays { get; private set; }
+    public int? NoOfDays { get;  set; }
+    public List<Days> StartDays { get;  set; }
         
-    public ScheduleStatus Status { get; private set; } 
-    public DateTime? RecurringTime { get; private set; }
+    public ScheduleStatus Status { get;  set; } 
+    public DateTime? RecurringTime { get;  set; }
 
 
     // Property to store StartDateTime in UTC and retrieve in local time
     public DateTime StartDateTime
     {
         get => _startDateTime.ToLocalTime();
-        private set => _startDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+        set => _startDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
     }
     public DateTime EndDateTime
     {
         get => _endDateTime.ToLocalTime();
-       private set => _endDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+        set => _endDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
     }
         
     public string? StartCronExp { get; set; }
@@ -38,8 +39,12 @@ public class Schedule : BaseEntity
         StartDateTime = StartDateTime.ToUniversalTime();
         EndDateTime = EndDateTime.ToUniversalTime();
     }
-    
-    public Schedule(){ }
+
+    public Schedule()
+    {
+        StartDays = new List<Days>();
+
+    }
    
 
     public Schedule(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,

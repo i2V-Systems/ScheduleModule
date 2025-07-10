@@ -1,27 +1,32 @@
+using Application.Schedule;
+using AutoMapper;
 using Domain.AttachedResources;
 using Microsoft.Extensions.Logging;
 using Scheduling.Contracts.AttachedResources.DTOs;
+using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.AttachedResources.Service;
 
+[TransientService]
 public class ResourceMappingService :IScheduleResourceService
 {
-    private readonly IScheduleResourceRepository _resourceRepository;
+    private readonly IScheduleRepository<ScheduleResourceMapping> _resourceRepository;
     private readonly ILogger<ResourceMappingService> _logger;
-    
-    public ResourceMappingService(
-        IScheduleResourceRepository scheduleResourceRepository,ILogger<ResourceMappingService> logger)
+    private readonly IMapper _mapper;
+    public ResourceMappingService(IMapper mapper,
+        IScheduleRepository<ScheduleResourceMapping> scheduleResourceRepository,ILogger<ResourceMappingService> logger)
     {
         _logger = logger?? throw new ArgumentNullException(nameof(logger));
         _resourceRepository = scheduleResourceRepository;
+        _mapper = mapper;
     }
     
-    public  async Task AddResourceMappingAsync(ScheduleResourceDto mapping)
+    public  async Task AddResourceMappingAsync(ScheduleResourceDto dto)
     {
         try
         {
-            var entity = mapping.ToDomain();
-            await _resourceRepository.AddAsync(entity);
+            var resource = _mapper.Map<ScheduleResourceMapping>(dto);
+            await _resourceRepository.AddAsync(resource);
         }
         catch (Exception ex)
         {
@@ -34,7 +39,7 @@ public class ResourceMappingService :IScheduleResourceService
         try
         {
             var entities = await _resourceRepository.GetAllAsync();
-            return entities.Select(e => e.ToDto());
+            return entities.Select(e =>  _mapper.Map<ScheduleResourceDto>(e));
         }
         catch (Exception ex)
         {
@@ -46,10 +51,10 @@ public class ResourceMappingService :IScheduleResourceService
     {
         try
         {
-            var entity = await _resourceRepository.GetByIdAsync(mappingId);
+            var entity = await _resourceRepository.GetAsync(mappingId);
             if (entity != null)
             {
-                await _resourceRepository.DeleteAsync(entity.Id);
+                _resourceRepository.Delete(entity);
             }
         }
         catch (Exception ex)

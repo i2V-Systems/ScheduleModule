@@ -1,5 +1,6 @@
 
 using Coravel.Scheduling.Schedule.Interfaces;
+using Scheduling.Contracts.Schedule.ScheduleEvent;
 
 
 namespace Application.Schedule.ScheduleEvent.Scheduler;
