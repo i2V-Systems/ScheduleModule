@@ -12,6 +12,7 @@ public interface IScheduleCRUDService
         Task<ScheduleDto> AddAsync(ScheduleDto dto, string userName = "");
         Task UpdateAsync(ScheduleDto dto, string userName = "");
         Task DeleteAsync(Guid id, string userName = "");
-      
-    
+        Task<bool> ExistAsync(Guid id, string userName = "");
+
+
 }

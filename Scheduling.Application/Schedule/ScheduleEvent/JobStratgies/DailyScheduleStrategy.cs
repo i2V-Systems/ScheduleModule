@@ -1,10 +1,11 @@
 using Application.Schedule.ScheduleEvent.JobStratgies.helper;
-using Application.Schedule.ScheduleEvent.Scheduler;
-using Application.Schedule.ScheduleEvent.SchedulerServices;
+using Microsoft.Extensions.Logging;
 using Scheduling.Contracts;
+using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
+using Scheduling.Contracts.Schedule.ScheduleEvent.ValueObjects;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 
@@ -14,47 +15,68 @@ namespace Application.Schedule.ScheduleEvent.JobStratgies;
 [ScheduleStrategy(ScheduleType.Daily)]
 internal class DailyScheduleStrategy : IScheduleJobStrategy
 {
-    public ScheduleTypeInfo SupportedType => new(ScheduleType.Daily, name: "Daily Schedule", description: "Executes tasks daily at specific times");
+    private readonly ILogger<DailyScheduleStrategy> _logger;
 
-
-    public bool CanHandle(ScheduleType scheduleType)
+    public DailyScheduleStrategy(ILogger<DailyScheduleStrategy> logger)
     {
-        return scheduleType == ScheduleType.Daily;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+    
+    public bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Daily;
 
-    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
+    public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
-        if (schedule.SubType == ScheduleSubType.Every)
+        try
         {
-            // TODO: Implement every N days logic
-            ScheduleStartAndEndEventsEvery(taskToPerform, schedule, scheduler, eventExecutor);
-           
+            var results = new List<ScheduleResult>();
+
+            if (schedule.SubType == ScheduleSubType.Every)
+            {
+                // TODO: Implement every N days logic
+                _logger.LogWarning("Every N days logic not implemented for schedule {ScheduleId}", schedule.Id);
+                return ScheduleResult.Failure("Every N days logic not implemented");
+            }
+
+            // Schedule start and end events
+            var startResult = await ScheduleStartAndEndEventsAsync(schedule, topics, scheduler, cancellationToken);
+            return startResult;
         }
-
-        ScheduleStartAndEndEvents(taskToPerform, schedule, scheduler,eventExecutor);
-        
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in daily schedule strategy for schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Error in daily schedule strategy", ex);
+        }
     }
 
-    private void ScheduleStartAndEndEvents(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler,ISchedulerService eventExecutor)
+    private async Task<ScheduleResult> ScheduleStartAndEndEventsAsync(
+        ScheduleDto schedule, 
+        IReadOnlyList<Resources> topics, 
+        IUnifiedScheduler scheduler,
+        CancellationToken cancellationToken)
     {
-        var startTime = schedule.StartDateTime;
-        var endTime = schedule.EndDateTime;
+        var startTime = TimeOnly.FromDateTime( schedule.StartDateTime);
+        var endTime = TimeOnly.FromDateTime( schedule.StartDateTime);
+        var allJobIds = new List<string>();
+
         
-        scheduler.ScheduleDaily(
-            schedule.Id+ nameof(jobIds._start),
-            () => eventExecutor.ExecuteStartEvent(taskToPerform, schedule),
-            startTime.Hour,
-            startTime.Minute);
+        // Schedule start event
+        var startTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Start);
+        var startResult = await scheduler.ScheduleDailyAsync(topics, startTrigger, startTime, cancellationToken);
         
-        scheduler.ScheduleDaily(
-            schedule.Id+ nameof(jobIds._end),
-            () => eventExecutor.ExecuteEndEvent(taskToPerform, schedule, scheduler),
-            endTime.Hour,
-            endTime.Minute);
-    }
-    private void ScheduleStartAndEndEventsEvery(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
-    {
-        // Specialized logic for "every N weeks"
-        Console.WriteLine($"Executing weekly every N days schedule for {schedule.Id}");
+        if (!startResult.IsSuccess)
+            return startResult;
+
+        allJobIds.AddRange(startResult.ScheduledJobIds);
+
+        // Schedule end event
+        var endTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.End);
+        var endResult = await scheduler.ScheduleDailyAsync(topics, endTrigger, endTime, cancellationToken);
+        
+        if (!endResult.IsSuccess)
+            return endResult;
+
+        allJobIds.AddRange(endResult.ScheduledJobIds);
+
+        return ScheduleResult.Success(allJobIds);
     }
 }

@@ -7,10 +7,9 @@ namespace Scheduling.Contracts.Schedule.ScheduleEvent;
 
 public interface IScheduleEventManager
 {
-    Task ExecuteAsync(ScheduleDto schedule, List<ScheduleResourceDto> resources);
+    Task ExecuteAsync(ScheduleDto schedule);
 
     Task UpdateAsync(ScheduleDto schedule);
     Task DeleteAsync(Guid id);
     void executeLoadedTasks(ConcurrentDictionary<Guid, ScheduleDto> schedules);
-    void UnscheduleJob(Guid id);
 }

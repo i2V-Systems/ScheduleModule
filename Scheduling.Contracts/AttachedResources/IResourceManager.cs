@@ -7,10 +7,10 @@ namespace Scheduling.Contracts.AttachedResources;
 
 public interface IResourceManager
 {
-    public IEnumerable<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId);
+    public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId);
     public bool IsResourceLoaded(Guid scheduleId);
     public int GetLoadedResourceCount();
-    public IEnumerable<ScheduleResourceDto> GetAllCachedResources();
+    public List<ScheduleResourceDto> GetAllCachedResources();
     public Task RefreshCacheAsync();
     public Task InitializeAsync();
     protected Task LoadScheduleResourceMapping();

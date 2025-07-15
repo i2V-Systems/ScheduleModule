@@ -1,12 +1,10 @@
 
 using System.Collections.Concurrent;
-using System.Reflection;
 using Application.AttachedResources;
 using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
-using Application.Schedule.ScheduleEvent.SchedulerServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Scheduling.Contracts.AttachedResources.DTOs;
+using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Serilog;
@@ -28,33 +26,35 @@ internal class ScheduleEventManager :IScheduleEventManager
     }
  
     
-    public   async Task ExecuteAsync(ScheduleDto schedule, List<ScheduleResourceDto> resources )
+    public   async Task ExecuteAsync(ScheduleDto schedule )
     {
         using var scope = _serviceProvider.CreateScope();
-        var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduledEventService>();
-        await scheduleEventService.ExecuteAsync(schedule, resources);
+        var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
+        List<Resources> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id).Select(s=>s.ResourceType).ToList();
+        await scheduleEventService.ExecuteAsync(schedule,resources);
     }
 
     public async Task UpdateAsync(ScheduleDto schedule)
     {
         using var scope = _serviceProvider.CreateScope();
-        var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduledEventService>();
-        await scheduleEventService.UpdateAsync(schedule);
+        var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
+        List<Resources> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id).Select(s=>s.ResourceType).ToList();
+        await scheduleEventService.UpdateAsync(schedule,resources);
     }
     public async Task DeleteAsync(Guid id)
     {
         using var scope = _serviceProvider.CreateScope();
-        var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduledEventService>();
+        var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
         await scheduleEventService.DeleteAsync(id);
     }
     public void executeLoadedTasks( ConcurrentDictionary<Guid, ScheduleDto> schedules)
     {
         try
         {
-            var scheduleEventService = _serviceProvider.GetRequiredService<ScheduledEventService>();
+            var scheduleEventService = _serviceProvider.GetRequiredService<ScheduleEventService>();
             schedules.Select(item =>
             {
-                List<ScheduleResourceDto> resources = _resourceManager.GetResourcesByScheduleId(item.Value.Id).ToList();
+                List<Resources> resources = _resourceManager.GetResourcesByScheduleId(item.Value.Id).Select(s=>s.ResourceType).ToList();
                 return scheduleEventService.ExecuteAsync(item.Value, resources);
             });
         }
@@ -64,10 +64,5 @@ internal class ScheduleEventManager :IScheduleEventManager
         }
         
       
-    }
-    public void UnscheduleJob(Guid id)
-    {
-        var scheduleEventService = _serviceProvider.GetRequiredService<ScheduledEventService>();
-        scheduleEventService.UnscheduleJob(id);
     }
 }

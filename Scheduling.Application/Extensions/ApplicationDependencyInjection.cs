@@ -3,7 +3,10 @@ using Application.AttachedResources;
 using Application.AttachedResources.Service;
 using Application.Schedule;
 using Application.Schedule.ScheduleEvent;
+using Application.Schedule.ScheduleEvent.JobKey;
+using Application.Schedule.ScheduleEvent.JobStratgies.helper;
 using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
+using Application.Schedule.ScheduleEvent.Validator;
 using Application.Schedule.ScheduleObj;
 using Domain.AttachedResources;
 using Domain.Schedule;
@@ -19,10 +22,15 @@ namespace Application.Extensions;
 public static class ApplicationDependencyInjection
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
-    {
-        services.AddTransient<ScheduledEventService>();
+    { 
+       
+     
        // Core Application Services
+       services.AddTransient<IScheduleEventService,ScheduleEventService>();
        services.AddSingleton<IResourceManager, ResourceManager>();
+       services.AddTransient<IScheduleValidator, ScheduleValidator>();
+       services.AddTransient<IScheduleStrategyFactory, ScheduleStrategyFactory>();
+       services.AddTransient<IJobKeyGenerator, JobKeyGenerator>();
        services.AddSingleton<IScheduleEventManager, ScheduleEventManager>();
        services.AddSingleton<IScheduleManager, ScheduleManager>();
        

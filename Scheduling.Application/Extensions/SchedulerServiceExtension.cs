@@ -1,10 +1,13 @@
+using System.Text.Json;
 using Application.Schedule.ScheduleEvent.Scheduler;
 using Coravel;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Application.Extensions;
 
@@ -19,28 +22,37 @@ public static class SchedulerServiceExtensions
 
         return schedulingService.ToLowerInvariant() switch
         {
-            "coravel" => services.AddCoravelScheduler(),
-            "hangfire" => services.AddHangfireScheduler(configuration),
+            // "coravel" => services.AddCoravelScheduler(),
+            // "hangfire" => services.AddHangfireScheduler(configuration),
+            "quartz" => services.AaddQuartzScheduler(configuration),
             _ => throw new InvalidOperationException($"Unsupported scheduler: {schedulingService}")
         };
     }
-
-    private static IServiceCollection AddCoravelScheduler(this IServiceCollection services)
+    private static IServiceCollection AaddQuartzScheduler(this IServiceCollection services,IConfiguration configuration)
     {
-        services.AddScheduler();
-        services.AddEvents();
-        services.AddSingleton<IUnifiedScheduler, CoravelUnifiedScheduler>();
-        return services;
-    }
-
-    private static IServiceCollection AddHangfireScheduler(
-        this IServiceCollection services,
-        IConfiguration configuration)
-    {
-        services.AddHangfire(config =>
-            config.UsePostgreSqlStorage(configuration.GetConnectionString("analytic")));
-        services.AddHangfireServer();
-        services.AddSingleton<IUnifiedScheduler, HangfireUnifiedScheduler>();
+        
+        services.AddQuartz(q =>
+        {
+            q.UseMicrosoftDependencyInjectionJobFactory();
+            q.UsePersistentStore(s =>
+            {
+                s.RetryInterval = TimeSpan.FromSeconds(15);
+                s.UsePostgres(cfg =>
+                    {
+                        cfg.ConnectionString = configuration.GetConnectionString("analytic");
+                        cfg.TablePrefix = "scheduler.qrtz_";
+                    },
+                    dataSourceName: "schedulers");
+                s.UseNewtonsoftJsonSerializer();
+            });
+        });
+        // Add Quartz.NET as a hosted service
+        services.AddQuartzHostedService(options =>
+        {
+            options.WaitForJobsToComplete = true;
+        });
+        
+        services.AddSingleton<IUnifiedScheduler, QuartzUnifiedScheduler>();
         return services;
     }
 }

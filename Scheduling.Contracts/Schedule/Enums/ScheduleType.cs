@@ -5,6 +5,8 @@ public enum ScheduleType
         Daily,
         Weekly,
         DateWise,
-        Custom
+        Custom,
+        Monthly,
+        Yearly
 }
  

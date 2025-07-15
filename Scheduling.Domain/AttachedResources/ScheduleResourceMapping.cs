@@ -13,13 +13,13 @@ public class ScheduleResourceMapping :BaseEntity
 
     public ScheduleResourceMapping()
     {
-        
+        ScheduleId = new Guid();
     }
 
     public ScheduleResourceMapping(Guid resId, Guid schId, Resources type)
     {
-        this.ScheduleId = schId;
-        this.ResourceId = resId;
-        this.ResourceType = type;
+        ScheduleId = schId;
+        ResourceId = resId;
+        ResourceType = type;
     }
 }

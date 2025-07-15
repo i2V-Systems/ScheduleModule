@@ -211,5 +211,22 @@ namespace Presentation.Controllers
             );
             return Ok();
         }
+
+        [HttpPost("attachSchedule")]
+        public async Task<IActionResult> AttachSchedule([FromBody] ScheduleResourceDto resourceDto)
+        {
+            try
+            {
+                await _resourceManager.AddScheduleResourceMap(resourceDto);
+                var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
+                _scheduleManager.UpdateInMemory(schedule);
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                Log.Error("error in SchedulingController AttachSchedule",e.Message);
+                throw;
+            }
+        }
     }
 }

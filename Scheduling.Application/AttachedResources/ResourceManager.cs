@@ -28,7 +28,7 @@ internal class ResourceManager :IResourceManager
         }
         
 
-        public IEnumerable<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId)
+        public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId)
         {
             return ScheduleResourcesMap.Values
                 .Where(r => r.ScheduleId == scheduleId)
@@ -47,7 +47,7 @@ internal class ResourceManager :IResourceManager
         }
         
 
-        public IEnumerable<ScheduleResourceDto> GetAllCachedResources()
+        public List<ScheduleResourceDto> GetAllCachedResources()
         {
             return ScheduleResourcesMap.Values.ToList();
         }
@@ -75,7 +75,7 @@ internal class ResourceManager :IResourceManager
                 var allDetails =await  crudService.GetAllResourceMappingAsync();
                 foreach (var map in allDetails)
                 {
-                    ScheduleResourcesMap.TryAdd(map.Id, map);
+                    ScheduleResourcesMap.TryAdd(map.ScheduleId, map);
                 }
             }
             catch(Exception ex)
@@ -90,10 +90,18 @@ internal class ResourceManager :IResourceManager
         }
 
         public async Task AddScheduleResourceMap(ScheduleResourceDto map)
-        {  
-            using var scope = _serviceProvider.CreateScope();
-            var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
-            await crudService.AddResourceMappingAsync(map);
-            ScheduleResourcesMap.TryAdd(map.ScheduleId, map);
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+                await crudService.AddResourceMappingAsync(map);
+                ScheduleResourcesMap.TryAdd(map.ScheduleId, map);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
+            }
+           
         }
 }

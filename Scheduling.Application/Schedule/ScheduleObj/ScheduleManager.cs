@@ -112,8 +112,7 @@ namespace Application.Schedule.ScheduleObj
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
             schedule = await crudService.AddAsync(schedule);
             AddToMemory(schedule);
-            List<ScheduleResourceDto> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id).ToList();
-            await _scheduleEventManager.ExecuteAsync(schedule, resources);
+            await _scheduleEventManager.ExecuteAsync(schedule);
             return schedule.Id;
         }
 
@@ -133,7 +132,6 @@ namespace Application.Schedule.ScheduleObj
             await crudService.DeleteAsync(id);
             RemoveFromMemory(id);
             await _scheduleEventManager.DeleteAsync(id);
-            _scheduleEventManager.UnscheduleJob(id);
             return true;
         }
 
@@ -188,7 +186,6 @@ namespace Application.Schedule.ScheduleObj
                     await crudService.DeleteAsync(id);
                     RemoveFromMemory(id);
                     await _scheduleEventManager.DeleteAsync(id);
-                    _scheduleEventManager.UnscheduleJob(id);
                 }
             }
         }
@@ -212,7 +209,12 @@ namespace Application.Schedule.ScheduleObj
         {
             foreach (var schedule in schedules)
             {
-                var details = new ScheduleAllDetails { schedules = schedule };
+                var resource = _resourceManager.GetResourcesByScheduleId(schedule.Id);
+                var details = new ScheduleAllDetails
+                {
+                    schedules = schedule,
+                    AttachedResources = resource
+                };
                 AddOrUpdateScheduleDetails(details);
             }
         }
@@ -236,12 +238,11 @@ namespace Application.Schedule.ScheduleObj
             if (Schedules.TryGetValue(schedule.Id, out var existing))
             {
                 Schedules.TryUpdate(schedule.Id, schedule, existing);
+                List<ScheduleResourceDto> resourceDtos=  _resourceManager.GetResourcesByScheduleId(schedule.Id);
                 var updatedDetails = new ScheduleAllDetails
                 {
                     schedules = schedule,
-                    AttachedResources = ScheduleDetailsMap.ContainsKey(schedule.Id)
-                        ? ScheduleDetailsMap[schedule.Id].AttachedResources
-                        : null
+                    AttachedResources = resourceDtos ?? null
                 };
                 AddOrUpdateScheduleDetails(updatedDetails);
             }

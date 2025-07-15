@@ -1,28 +1,75 @@
 using Application.Schedule.ScheduleEvent.JobStratgies.helper;
-using Application.Schedule.ScheduleEvent.Scheduler;
-using Application.Schedule.ScheduleEvent.SchedulerServices;
+using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
+using Microsoft.Extensions.Logging;
 using Scheduling.Contracts;
+using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
+using Scheduling.Contracts.Schedule.ScheduleEvent.ValueObjects;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 
 namespace Application.Schedule.ScheduleEvent.JobStratgies;
-// Example of how to add a new strategy in the future
+
 [TransientService]
 [ScheduleStrategy(ScheduleType.Custom)]
 internal class CustomScheduleStrategy : IScheduleJobStrategy
 {
-    public ScheduleTypeInfo SupportedType => new(ScheduleType.Custom, name: "Custom Schedule", description: "Custom scheduling logic");
-    public bool CanHandle(ScheduleType scheduleType)
+    private readonly ILogger<CustomScheduleStrategy> _logger;
+
+    public CustomScheduleStrategy(ILogger<CustomScheduleStrategy> logger)
     {
-        return scheduleType == ScheduleType.Custom;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public void ScheduleJob(Action<Guid, ScheduleEventType> taskToPerform, ScheduleDto schedule, IUnifiedScheduler scheduler, ISchedulerService eventExecutor)
+    public ScheduleTypeInfo SupportedType => new(ScheduleType.Custom, name: "Custom Schedule", description: "Custom scheduling logic using cron expressions");
+
+    public bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Custom;
+
+    public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
-        // Custom scheduling logic here
-        Console.WriteLine($"Executing custom schedule for {schedule.Id}");
+        try
+        {
+            var cronn = CronExpressionBuilder.BuildDailyCronExpression(schedule.StartDateTime);//TODO remove this and add custom logic 
+            if (string.IsNullOrWhiteSpace(cronn))
+            {
+                _logger.LogWarning("Custom schedule {ScheduleId} missing cron expression", schedule.Id);
+                return ScheduleResult.Failure("Custom schedule requires a valid cron expression");
+            }
+
+            var allJobIds = new List<string>();
+
+            // Schedule start event with custom cron
+            var startTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Start);
+            var startResult = await scheduler.ScheduleCronAsync(topics, startTrigger, cronn, cancellationToken);
+            
+            if (!startResult.IsSuccess)
+                return startResult;
+
+            allJobIds.AddRange(startResult.ScheduledJobIds);
+
+            // Schedule end event if different cron expression provided
+            // if (!string.IsNullOrWhiteSpace(schedule.EndCronExpression) && 
+            //     schedule.EndCronExpression != schedule.CronExpression)
+            // {
+            //     var endTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.End);
+            //     var endResult = await scheduler.ScheduleCronAsync(topics, endTrigger, schedule.EndCronExpression, cancellationToken);
+            //     
+            //     if (!endResult.IsSuccess)
+            //         return endResult;
+            //
+            //     allJobIds.AddRange(endResult.ScheduledJobIds);
+            // }
+
+            // _logger.LogInformation("Successfully scheduled custom jobs for schedule {ScheduleId} with cron {CronExpression}", 
+            //     schedule.Id, schedule.CronExpression);
+            return ScheduleResult.Success(allJobIds);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in custom schedule strategy for schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Error in custom schedule strategy", ex);
+        }
     }
 }

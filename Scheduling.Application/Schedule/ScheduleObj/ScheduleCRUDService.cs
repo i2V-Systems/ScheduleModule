@@ -49,6 +49,19 @@ namespace Application.Schedule.ScheduleObj
                 throw;
             }
         }
+        public async Task<bool> ExistAsync(Guid id,string userName="")
+        {
+            try
+            {
+                var entities = await _schedulesRepository.FindAsync(schedule =>schedule.Id==id);
+                return entities != null ? true : false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting all schedules");
+                throw;
+            }
+        }
 
         public async Task<ScheduleDto> AddAsync(ScheduleDto  dto, string userName = "")
         {
