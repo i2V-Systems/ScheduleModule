@@ -5,6 +5,7 @@ using Quartz;
 using Scheduling.Contracts;
 using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
+using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleEvent.Scheduler;
@@ -27,6 +28,19 @@ public class TopicDispatcherJob : IJob
     {
         try
         {
+            
+            var jobKey = context.JobDetail.Key;
+            if (context.Recovering)
+            {
+                Log.Error("RECOVERING missed job execution for: {JobKey} at {RecoveryTime}", 
+                    jobKey, DateTimeOffset.Now);
+            }
+            else
+            {
+                Log.Error("Normal job execution for: {JobKey} at {ExecutionTime}", 
+                    jobKey, DateTimeOffset.Now);
+            }
+            
             var data = context.MergedJobDataMap;
 
             // Extract job data

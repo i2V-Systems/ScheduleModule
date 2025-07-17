@@ -34,6 +34,11 @@ public static class SchedulerServiceExtensions
         services.AddQuartz(q =>
         {
             q.UseMicrosoftDependencyInjectionJobFactory();
+            // Add scheduler identity for clustering
+            q.SchedulerId = "MyScheduler";
+            q.SchedulerName = "MyQuartzScheduler";
+            
+            // Use persistent job store
             q.UsePersistentStore(s =>
             {
                 s.RetryInterval = TimeSpan.FromSeconds(15);
@@ -44,7 +49,14 @@ public static class SchedulerServiceExtensions
                     },
                     dataSourceName: "schedulers");
                 s.UseNewtonsoftJsonSerializer();
+                s.UseClustering(c =>
+                {
+                    c.CheckinInterval = TimeSpan.FromSeconds(20);
+                    c.CheckinMisfireThreshold = TimeSpan.FromSeconds(30);
+                });
             });
+            // Set misfire threshold
+            q.MisfireThreshold=TimeSpan.FromSeconds(30);
         });
         // Add Quartz.NET as a hosted service
         services.AddQuartzHostedService(options =>

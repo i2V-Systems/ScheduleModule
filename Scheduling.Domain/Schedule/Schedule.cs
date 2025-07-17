@@ -11,7 +11,7 @@ public class Schedule : BaseEntity
     public ScheduleSubType? SubType { get;  set; }
     public string Details { get;  set; }
     private DateTime _startDateTime;
-    private DateTime _endDateTime;
+    private DateTime? _endDateTime;
     public int? NoOfDays { get;  set; }
     public List<Days> StartDays { get;  set; }
         
@@ -25,10 +25,22 @@ public class Schedule : BaseEntity
         get => _startDateTime.ToLocalTime();
         set => _startDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
     }
-    public DateTime EndDateTime
+    public DateTime? EndDateTime
     {
-        get => _endDateTime.ToLocalTime();
-        set => _endDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+        get => _endDateTime?.ToLocalTime();
+        set
+        {
+            if (value.HasValue)
+            {
+                _endDateTime = value.Value.Kind == DateTimeKind.Utc 
+                    ? value.Value 
+                    : value.Value.ToUniversalTime();
+            }
+            else
+            {
+                _endDateTime = null;
+            }
+        }
     }
         
     public string? StartCronExp { get; set; }
@@ -37,7 +49,7 @@ public class Schedule : BaseEntity
     public void ConvertToUTC()
     {
         StartDateTime = StartDateTime.ToUniversalTime();
-        EndDateTime = EndDateTime.ToUniversalTime();
+        EndDateTime = EndDateTime?.ToUniversalTime();
     }
 
     public Schedule()

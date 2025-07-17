@@ -28,39 +28,66 @@ internal class DateWiseScheduleStrategy : IScheduleJobStrategy
 
     public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
+        if (schedule == null) throw new ArgumentNullException(nameof(schedule));
+        if (topics == null) throw new ArgumentNullException(nameof(topics));
+        if (scheduler == null) throw new ArgumentNullException(nameof(scheduler));
         try
         {
-            var allJobIds = new List<string>();
-
-            var startDateTime = schedule.StartDateTime;
-            var endDateTime = schedule.EndDateTime;
-
-            // Schedule start event
-            var startTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Start);
-            var startResult = await scheduler.ScheduleDateWiseAsync(topics, startTrigger, startDateTime, cancellationToken);
-            
-            if (!startResult.IsSuccess)
-                return startResult;
-
-            allJobIds.AddRange(startResult.ScheduledJobIds);
-
-            // Schedule end event
-            var endTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.End);
-            var endResult = await scheduler.ScheduleDateWiseAsync(topics, endTrigger, endDateTime, cancellationToken);
-            
-            if (!endResult.IsSuccess)
-                return endResult;
-
-            allJobIds.AddRange(endResult.ScheduledJobIds);
-
-            _logger.LogInformation("Successfully scheduled date-wise jobs for schedule {ScheduleId}", schedule.Id);
-            return ScheduleResult.Success(allJobIds);
+            if (schedule.EndDateTime.HasValue)
+            {
+                return await ScheduleStartAndEndAsync(
+                    topics,
+                    async (t, trigger, dt, _, ct) => await scheduler.ScheduleDateWiseAsync(t, trigger, dt, ct),
+                    schedule.Id,
+                    schedule.StartDateTime, null,
+                    schedule.EndDateTime??DateTime.Now, null,
+                    cancellationToken);
+            }
+            else
+            {
+                // Only start/once event
+                var trigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Once);
+                var result = await scheduler.ScheduleDateWiseAsync(topics, trigger, schedule.StartDateTime, cancellationToken);
+                return result.IsSuccess 
+                    ? ScheduleResult.Success(result.ScheduledJobIds)
+                    : result;
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in date-wise schedule strategy for schedule {ScheduleId}", schedule.Id);
             return ScheduleResult.Failure("Error in date-wise schedule strategy", ex);
         }
+    }
+    
+    
+    /// <summary>
+    /// Generic helper to schedule start & end events.
+    /// </summary>
+    private async Task<ScheduleResult> ScheduleStartAndEndAsync(
+        IReadOnlyList<Resources> topics,
+        Func<IReadOnlyList<Resources>, ScheduleEventTrigger, DateTime, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
+        Guid scheduleId,
+        DateTime startDateTime, string? startCron,
+        DateTime endDateTime, string? endCron,
+        CancellationToken cancellationToken)
+    {
+        var allJobIds = new List<string>();
+
+        // Schedule start event
+        var startTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.Start);
+        var startResult = await scheduleFunc(topics, startTrigger, startDateTime, startCron, cancellationToken);
+        if (!startResult.IsSuccess) return startResult;
+        allJobIds.AddRange(startResult.ScheduledJobIds);
+
+        // Schedule end event
+        var endTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.End);
+        var endResult = await scheduleFunc(topics, endTrigger, endDateTime, endCron, cancellationToken);
+        if (!endResult.IsSuccess) return endResult;
+        allJobIds.AddRange(endResult.ScheduledJobIds);
+
+        _logger.LogInformation("Successfully scheduled date-wise jobs for schedule {ScheduleId}", scheduleId);
+        return ScheduleResult.Success(allJobIds);
     }
     
 }

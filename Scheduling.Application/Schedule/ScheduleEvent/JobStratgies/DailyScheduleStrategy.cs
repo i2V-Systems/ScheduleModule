@@ -24,22 +24,46 @@ internal class DailyScheduleStrategy : IScheduleJobStrategy
     
     public bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Daily;
 
-    public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
+    public async Task<ScheduleResult> ScheduleJobAsync(
+        ScheduleDto schedule, 
+        IReadOnlyList<Resources> topics, 
+        IUnifiedScheduler scheduler, 
+        CancellationToken cancellationToken = default)
     {
+        if (schedule == null) throw new ArgumentNullException(nameof(schedule));
+        if (topics == null) throw new ArgumentNullException(nameof(topics));
+        if (scheduler == null) throw new ArgumentNullException(nameof(scheduler));
+        
         try
         {
-            var results = new List<ScheduleResult>();
-
+            // Currently unsupported sub-type
             if (schedule.SubType == ScheduleSubType.Every)
             {
-                // TODO: Implement every N days logic
                 _logger.LogWarning("Every N days logic not implemented for schedule {ScheduleId}", schedule.Id);
                 return ScheduleResult.Failure("Every N days logic not implemented");
             }
+            var startTime = TimeOnly.FromDateTime(schedule.StartDateTime);
 
-            // Schedule start and end events
-            var startResult = await ScheduleStartAndEndEventsAsync(schedule, topics, scheduler, cancellationToken);
-            return startResult;
+            if (schedule.EndDateTime.HasValue)
+            {
+                var endTime = TimeOnly.FromDateTime(schedule.EndDateTime.Value);
+                return await ScheduleStartAndEndAsync(
+                    topics,
+                    async (t, trigger, time, _, ct) => await scheduler.ScheduleDailyAsync(t, trigger, time, ct),
+                    schedule.Id,
+                    startTime, null,
+                    endTime, null,
+                    cancellationToken);
+            }
+            else
+            {
+                // Only once event
+                var onceTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Once);
+                var result = await scheduler.ScheduleDailyAsync(topics, onceTrigger, startTime, cancellationToken);
+                return result.IsSuccess
+                    ? ScheduleResult.Success(result.ScheduledJobIds)
+                    : result;
+            }
         }
         catch (Exception ex)
         {
@@ -48,33 +72,29 @@ internal class DailyScheduleStrategy : IScheduleJobStrategy
         }
     }
 
-    private async Task<ScheduleResult> ScheduleStartAndEndEventsAsync(
-        ScheduleDto schedule, 
-        IReadOnlyList<Resources> topics, 
-        IUnifiedScheduler scheduler,
+    /// <summary>
+    /// Generic method to schedule start & end events.
+    /// </summary>
+    private async Task<ScheduleResult> ScheduleStartAndEndAsync(
+        IReadOnlyList<Resources> topics,
+        Func<IReadOnlyList<Resources>, ScheduleEventTrigger, TimeOnly, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
+        Guid scheduleId,
+        TimeOnly startTime, string? startCron,
+        TimeOnly endTime, string? endCron,
         CancellationToken cancellationToken)
     {
-        var startTime = TimeOnly.FromDateTime( schedule.StartDateTime);
-        var endTime = TimeOnly.FromDateTime( schedule.StartDateTime);
         var allJobIds = new List<string>();
 
-        
-        // Schedule start event
-        var startTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Start);
-        var startResult = await scheduler.ScheduleDailyAsync(topics, startTrigger, startTime, cancellationToken);
-        
-        if (!startResult.IsSuccess)
-            return startResult;
-
+        // Start event
+        var startTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.Start);
+        var startResult = await scheduleFunc(topics, startTrigger, startTime, startCron, cancellationToken);
+        if (!startResult.IsSuccess) return startResult;
         allJobIds.AddRange(startResult.ScheduledJobIds);
 
-        // Schedule end event
-        var endTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.End);
-        var endResult = await scheduler.ScheduleDailyAsync(topics, endTrigger, endTime, cancellationToken);
-        
-        if (!endResult.IsSuccess)
-            return endResult;
-
+        // End event
+        var endTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.End);
+        var endResult = await scheduleFunc(topics, endTrigger, endTime, endCron, cancellationToken);
+        if (!endResult.IsSuccess) return endResult;
         allJobIds.AddRange(endResult.ScheduledJobIds);
 
         return ScheduleResult.Success(allJobIds);

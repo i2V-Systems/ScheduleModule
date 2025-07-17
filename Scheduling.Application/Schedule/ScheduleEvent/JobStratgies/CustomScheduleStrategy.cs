@@ -29,47 +29,76 @@ internal class CustomScheduleStrategy : IScheduleJobStrategy
 
     public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
+        if (schedule == null) throw new ArgumentNullException(nameof(schedule));
+        if (topics == null) throw new ArgumentNullException(nameof(topics));
+        if (scheduler == null) throw new ArgumentNullException(nameof(scheduler));
         try
         {
-            var cronn = CronExpressionBuilder.BuildDailyCronExpression(schedule.StartDateTime);//TODO remove this and add custom logic 
-            if (string.IsNullOrWhiteSpace(cronn))
+            var startCron = CronExpressionBuilder.BuildDailyCronExpression(schedule.StartDateTime);
+            if (string.IsNullOrWhiteSpace(startCron))
             {
                 _logger.LogWarning("Custom schedule {ScheduleId} missing cron expression", schedule.Id);
                 return ScheduleResult.Failure("Custom schedule requires a valid cron expression");
             }
-
-            var allJobIds = new List<string>();
-
-            // Schedule start event with custom cron
-            var startTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Start);
-            var startResult = await scheduler.ScheduleCronAsync(topics, startTrigger, cronn, cancellationToken);
-            
-            if (!startResult.IsSuccess)
-                return startResult;
-
-            allJobIds.AddRange(startResult.ScheduledJobIds);
-
-            // Schedule end event if different cron expression provided
-            // if (!string.IsNullOrWhiteSpace(schedule.EndCronExpression) && 
-            //     schedule.EndCronExpression != schedule.CronExpression)
-            // {
-            //     var endTrigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.End);
-            //     var endResult = await scheduler.ScheduleCronAsync(topics, endTrigger, schedule.EndCronExpression, cancellationToken);
-            //     
-            //     if (!endResult.IsSuccess)
-            //         return endResult;
-            //
-            //     allJobIds.AddRange(endResult.ScheduledJobIds);
-            // }
-
-            // _logger.LogInformation("Successfully scheduled custom jobs for schedule {ScheduleId} with cron {CronExpression}", 
-            //     schedule.Id, schedule.CronExpression);
-            return ScheduleResult.Success(allJobIds);
+            if (schedule.EndDateTime.HasValue)
+            {
+                var endCron = schedule.EndDateTime!=null
+                    ? CronExpressionBuilder.BuildDailyCronExpression(schedule.EndDateTime??DateTime.Now)
+                    : null;
+             
+                return await ScheduleStartAndEndAsync(
+                    topics,
+                    async (t, trigger, _, cron, ct) => await scheduler.ScheduleCronAsync(t, trigger, cron!, ct),
+                    schedule.Id,
+                    DateTime.MinValue, startCron, // time unused in ScheduleCronAsync, so pass dummy
+                    DateTime.MinValue, endCron,
+                    cancellationToken);
+            }
+            else
+            {
+                // Only start/once event
+                var trigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Once);
+                var result = await scheduler.ScheduleCronAsync(topics, trigger, startCron, cancellationToken);
+                return result.IsSuccess 
+                    ? ScheduleResult.Success(result.ScheduledJobIds)
+                    : result;
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in custom schedule strategy for schedule {ScheduleId}", schedule.Id);
             return ScheduleResult.Failure("Error in custom schedule strategy", ex);
         }
+    }
+    /// <summary>
+    /// Generic helper to schedule start & (if cron provided) end events.
+    /// </summary>
+    private async Task<ScheduleResult> ScheduleStartAndEndAsync(
+        IReadOnlyList<Resources> topics,
+        Func<IReadOnlyList<Resources>, ScheduleEventTrigger, DateTime, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
+        Guid scheduleId,
+        DateTime startDateTime, string? startCron,
+        DateTime endDateTime, string? endCron,
+        CancellationToken cancellationToken)
+    {
+        var allJobIds = new List<string>();
+
+        // Schedule start event
+        var startTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.Start);
+        var startResult = await scheduleFunc(topics, startTrigger, startDateTime, startCron, cancellationToken);
+        if (!startResult.IsSuccess) return startResult;
+        allJobIds.AddRange(startResult.ScheduledJobIds);
+
+        // Schedule end event only if endCron is provided and different from start
+        if (!string.IsNullOrWhiteSpace(endCron) && endCron != startCron)
+        {
+            var endTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.End);
+            var endResult = await scheduleFunc(topics, endTrigger, endDateTime, endCron, cancellationToken);
+            if (!endResult.IsSuccess) return endResult;
+            allJobIds.AddRange(endResult.ScheduledJobIds);
+        }
+
+        _logger.LogInformation("Successfully scheduled custom jobs for schedule {ScheduleId}", scheduleId);
+        return ScheduleResult.Success(allJobIds);
     }
 }

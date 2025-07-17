@@ -29,16 +29,14 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
     {
         try
         {
-            // return await ScheduleJobsAsync(topics, metadata, trigger =>
-            //     trigger.WithSimpleSchedule(s=>s
-            //         .WithIntervalInMinutes(1)
-            //         .RepeatForever())
-            //     , cancellationToken);
             return await ScheduleJobsAsync(topics, metadata, trigger =>
-                trigger.WithDailyTimeIntervalSchedule(s => s
-                    .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
-                    .OnEveryDay()
-                    .WithIntervalInHours(24)), cancellationToken);
+                    trigger.WithDailyTimeIntervalSchedule(s => s
+                        .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
+                        .OnEveryDay()
+                        .WithIntervalInHours(24)
+                        .WithMisfireHandlingInstructionIgnoreMisfires()
+                    )
+                    , cancellationToken);
         }
         catch (Exception ex)
         {
@@ -73,6 +71,8 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
             var job = JobBuilder.Create<TopicDispatcherJob>()
                 .WithIdentity(jobKey)
+                .RequestRecovery(true) // Enable recovery
+                .StoreDurably(true)   // Keep job even if no triggers
                 .SetJobData(jobData)
                 .Build();
             
@@ -113,7 +113,8 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                     .WithDailyTimeIntervalSchedule(s => s
                         .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
                         .OnMondayThroughFriday()
-                        .WithIntervalInHours(24))
+                        .WithIntervalInHours(24)
+                        .WithMisfireHandlingInstructionIgnoreMisfires())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -147,7 +148,8 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                     .WithDailyTimeIntervalSchedule(s => s
                         .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
                         .OnSaturdayAndSunday()
-                        .WithIntervalInHours(24))
+                        .WithIntervalInHours(24)
+                        .WithMisfireHandlingInstructionIgnoreMisfires())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -194,7 +196,8 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                 var job = CreateJob(jobKey, metadata);
                 var trigger = TriggerBuilder.Create()
                     .WithIdentity(triggerKey)
-                    .WithCronSchedule(cronExpression)
+                    .WithCronSchedule(cronExpression, x=>
+                            x.WithMisfireHandlingInstructionIgnoreMisfires())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -226,6 +229,9 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                 var trigger = TriggerBuilder.Create()
                     .WithIdentity(triggerKey)
                     .StartAt(executeAt)
+                    .WithSimpleSchedule(x=>x
+                        .WithRepeatCount(0)
+                        .WithMisfireHandlingInstructionIgnoreMisfires())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -275,6 +281,8 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
     {
         return JobBuilder.Create<TopicDispatcherJob>()
             .WithIdentity(jobKey)
+            .RequestRecovery(true) // Enable recovery
+            .StoreDurably(true)   // Keep job even if no triggers
             .UsingJobData("scheduleId", metadata.scheduleId)
             .UsingJobData("EventType", metadata.eventType.ToString())
             .Build();
