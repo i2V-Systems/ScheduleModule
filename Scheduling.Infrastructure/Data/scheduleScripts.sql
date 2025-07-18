@@ -29,3 +29,7 @@ ALTER TABLE schedule_resources
     ADD CONSTRAINT uk_schedule_resource_type
         UNIQUE (schedule_id, resource_id, resource_type);
 
+
+INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'ShowScheduleTab');
+INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'AddSchedule');
+INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'DeleteSchedule');

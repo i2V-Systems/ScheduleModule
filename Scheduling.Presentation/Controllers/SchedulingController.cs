@@ -84,13 +84,13 @@ namespace Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ScheduleDto schedule)
+        public async Task<IActionResult> Create([FromBody] ScheduleAllDetails schedule)
         {
             try
             {
                 HttpContext.Request.Headers.TryGetValue("userid", out StringValues userid);
 
-                Guid scheduleId = await _scheduleManager.CreateScheduleAsync(schedule, userid);
+                Guid scheduleId = await _scheduleManager.CreateScheduleAsync(schedule.schedules, userid);
                 ScheduleAllDetails schedulesource = _scheduleManager.GetDetailed(scheduleId);
                 var objectToSend = new Dictionary<string, dynamic>()
                 {
@@ -113,16 +113,16 @@ namespace Presentation.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update( [FromRoute] Guid id, [FromBody] ScheduleDto schedule)
+        public async Task<IActionResult> Update( [FromRoute] Guid id, [FromBody] ScheduleAllDetails schedule)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            if (id != schedule.Id) return BadRequest();
+            if (id != schedule.schedules.Id) return BadRequest();
 
             try
             {
                 HttpContext.Request.Headers.TryGetValue("clientId", out StringValues clientId);
-                await _scheduleManager.UpdateScheduleAsync(schedule);
-                ScheduleAllDetails updatedSchedule =   _scheduleManager.GetDetailed(schedule.Id);
+                await _scheduleManager.UpdateScheduleAsync(schedule.schedules);
+                ScheduleAllDetails updatedSchedule =   _scheduleManager.GetDetailed(schedule.schedules.Id);
                 var objectToSend = new Dictionary<string, dynamic>()
                 {
                     {
@@ -220,6 +220,41 @@ namespace Presentation.Controllers
                 await _resourceManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 _scheduleManager.UpdateInMemory(schedule);
+                var scheduleAllDetailsList= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
+                var objectToSend = new Dictionary<string, dynamic>()
+                {
+                    { "scheduleAllDetailsList", scheduleAllDetailsList },
+                };
+                await _scheduleManager.SendCrudDataToClientAsync(
+                    CrudMethodType.Delete,
+                    objectToSend
+                );
+                return Ok();
+            }
+            catch (Exception e)
+            {
+                Log.Error("error in SchedulingController AttachSchedule",e.Message);
+                throw;
+            }
+        }
+
+        [HttpPut("removeMultipleAttachedResource")]
+        public async Task<IActionResult> DetachSchedule([FromBody] DetachScheduleRequest data)
+        {
+            try
+            {
+                await _resourceManager.DeletScheduleResourceMap(data.Ids, data.Schedule);
+                var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
+                _scheduleManager.UpdateInMemory(schedule);
+                var scheduleAllDetailsList= _scheduleManager.GetScheduleDetailsFromCache(data.Schedule.schedules.Id);
+                var objectToSend = new Dictionary<string, dynamic>()
+                {
+                    { "scheduleAllDetailsList", scheduleAllDetailsList },
+                };
+                await _scheduleManager.SendCrudDataToClientAsync(
+                    CrudMethodType.Delete,
+                    objectToSend
+                );
                 return Ok();
             }
             catch (Exception e)

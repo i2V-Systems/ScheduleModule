@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
+using Scheduling.Contracts.Schedule.DTOs;
 using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
@@ -102,6 +103,23 @@ internal class ResourceManager :IResourceManager
             {
                 Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
             }
-           
+        }
+
+        public async Task DeletScheduleResourceMap(List<Guid> ids, ScheduleAllDetails scheduleAllDetail)
+        {
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+                foreach (var id in ids)
+                {
+                    await crudService.DeleteResourceMappingAsync(id);
+                    ScheduleResourcesMap.TryRemove(scheduleAllDetail.schedules.Id, out var map);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
+            }
         }
 }
