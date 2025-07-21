@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.DTOs;
+using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Serilog;
 
@@ -38,8 +39,29 @@ internal class ScheduleEventManager :IScheduleEventManager
     {
         using var scope = _serviceProvider.CreateScope();
         var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
-        List<Resources> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id).Select(s=>s.ResourceType).ToList();
-        await scheduleEventService.UpdateAsync(schedule,resources);
+        
+        List<Resources> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id)
+            .Select(s=>s.ResourceType).ToList();
+        
+        var scheduleExists= await scheduleEventService.ScheduleExistsAsync(schedule.Id);
+        if (!scheduleExists)
+        {
+            await scheduleEventService.ExecuteAsync(schedule, resources);
+        }
+        else
+        {
+            await scheduleEventService.UpdateAsync(schedule, resources);
+        
+            // Handle enable/disable based on desired status
+            if (schedule.Status == ScheduleStatus.Disabled)
+            {
+                await scheduleEventService.DisableAsync(schedule.Id);
+            }
+            else if (schedule.Status == ScheduleStatus.Active)
+            {
+                await scheduleEventService.EnableAsync(schedule.Id);
+            }
+        }
     }
     public async Task DeleteAsync(Guid id)
     {

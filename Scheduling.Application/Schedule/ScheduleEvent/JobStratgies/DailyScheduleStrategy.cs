@@ -6,6 +6,7 @@ using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Scheduling.Contracts.Schedule.ScheduleEvent.ValueObjects;
+using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 
@@ -13,7 +14,7 @@ namespace Application.Schedule.ScheduleEvent.JobStratgies;
 
 [TransientService]
 [ScheduleStrategy(ScheduleType.Daily)]
-internal class DailyScheduleStrategy : IScheduleJobStrategy
+internal class DailyScheduleStrategy : BaseScheduleJobStrategy
 {
     private readonly ILogger<DailyScheduleStrategy> _logger;
 
@@ -22,9 +23,9 @@ internal class DailyScheduleStrategy : IScheduleJobStrategy
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
-    public bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Daily;
+    public override  bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Daily;
 
-    public async Task<ScheduleResult> ScheduleJobAsync(
+    public override   async Task<ScheduleResult> ScheduleJobAsync(
         ScheduleDto schedule, 
         IReadOnlyList<Resources> topics, 
         IUnifiedScheduler scheduler, 
@@ -71,7 +72,30 @@ internal class DailyScheduleStrategy : IScheduleJobStrategy
             return ScheduleResult.Failure("Error in daily schedule strategy", ex);
         }
     }
+    
+    public override async Task<ScheduleResult> UpdateJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await base.UpdateJobAsync(schedule, topics, scheduler, cancellationToken);
+            if (result.IsSuccess)
+            {
+                Log.Information("Successfully updated daily schedule {ScheduleId} for {TopicCount} topics", 
+                    schedule.Id, topics.Count);
+            }
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to update daily schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Failed to update daily schedule", ex);
+        }
+    }
+    
 
+    // The delete, enable, and disable methods are inherited from the base class
+    
+    
     /// <summary>
     /// Generic method to schedule start & end events.
     /// </summary>

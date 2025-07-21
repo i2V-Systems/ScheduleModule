@@ -14,7 +14,7 @@ namespace Application.Schedule.ScheduleEvent.JobStratgies;
 
 [TransientService]
 [ScheduleStrategy(ScheduleType.Weekly)]
-internal class WeeklyScheduleStrategy : IScheduleJobStrategy
+internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
 {
     private readonly ILogger<WeeklyScheduleStrategy> _logger;
 
@@ -24,9 +24,9 @@ internal class WeeklyScheduleStrategy : IScheduleJobStrategy
     }
     public ScheduleTypeInfo SupportedType => new(ScheduleType.Weekly, name: "Weekly Schedule", description: "Executes tasks on specific days of the week");
     
-    public bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Weekly;
+    public override bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Weekly;
 
-    public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
+    public override async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
         if (schedule == null) throw new ArgumentNullException(nameof(schedule));
         if (topics == null) throw new ArgumentNullException(nameof(topics));

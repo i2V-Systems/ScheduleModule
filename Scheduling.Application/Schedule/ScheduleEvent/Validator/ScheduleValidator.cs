@@ -20,9 +20,6 @@ public class ScheduleValidator : IScheduleValidator
 
             if (schedule.StartDateTime >= schedule.EndDateTime)
                 errors.Add("Start date must be before end date");
-
-            if (schedule.StartDateTime < DateTime.Now.AddMinutes(-5)) // Allow 5 minute buffer
-                errors.Add("Start date cannot be in the past");
         }
 
         return errors.Any() ? ValidationResult.Invalid(errors.ToArray()) : ValidationResult.Valid();

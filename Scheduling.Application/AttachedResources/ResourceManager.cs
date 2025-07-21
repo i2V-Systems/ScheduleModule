@@ -12,11 +12,11 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 namespace Application.AttachedResources;
 
 [SingletonService]
-internal class ResourceManager :IResourceManager
+internal  class ResourceManager :IResourceManager
 {
-     private readonly  IServiceProvider _serviceProvider;
-     private readonly  IConfiguration _configuration;
-     public  ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
+     private  readonly  IServiceProvider _serviceProvider;
+     private   readonly  IConfiguration _configuration;
+     public static ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
         
         public ResourceManager(IConfiguration configuration,
             IServiceProvider serviceProvider

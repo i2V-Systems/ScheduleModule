@@ -9,5 +9,9 @@ namespace Application.Schedule.ScheduleEvent.JobStratgies.helper;
 public interface IScheduleJobStrategy
 {
         Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default);
+        Task<ScheduleResult> UpdateJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default);
+        Task<ScheduleResult> DeleteJobAsync(Guid scheduleId, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default);
+        Task<ScheduleResult> EnableJobAsync(Guid scheduleId, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default);
+        Task<ScheduleResult> DisableJobAsync(Guid scheduleId, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default);
         bool CanHandle(ScheduleType scheduleType);
 }

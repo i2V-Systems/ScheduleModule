@@ -2,8 +2,10 @@ using Application.Schedule.ScheduleEvent.JobKey;
 using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using Quartz.Impl.Matchers;
 using Scheduling.Contracts;
 using Scheduling.Contracts.AttachedResources.Enums;
+using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Scheduling.Contracts.Schedule.ScheduleEvent.ValueObjects;
 using Serilog;
@@ -55,9 +57,10 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
         {
             var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             
-            // Generate single job key for the entire schedule
-            var jobKey = $"schedule-{metadata.scheduleId}-{metadata.eventType}-{Guid.NewGuid():N}";
-            var triggerKey = $"trigger-{metadata.scheduleId}-{metadata.eventType}-{Guid.NewGuid():N}";
+            // Use deterministic job key 
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var jobKey = $"schedule-{metadata.scheduleId}-{metadata.eventType}-{timestamp}";
+            var triggerKey = $"trigger-{metadata.scheduleId}-{metadata.eventType}-{timestamp}";
             
             var topicsJson = System.Text.Json.JsonSerializer.Serialize(topics.Select(t => t.ToString()).ToList());
 
@@ -66,7 +69,9 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                 { "scheduleId", metadata.scheduleId.ToString() },
                 { "eventType", metadata.eventType.ToString() },
                 { "topics" , topicsJson},
-                { "originalTopicCount", topics.Count }
+                { "originalTopicCount", topics.Count },
+                { "createdAt", DateTime.UtcNow.ToString("O") }, // ISO 8601 format
+                { "jobKey", jobKey }
             };
 
             var job = JobBuilder.Create<TopicDispatcherJob>()
@@ -287,4 +292,195 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
             .UsingJobData("EventType", metadata.eventType.ToString())
             .Build();
     }
+    
+    // method to support updating schedules
+    public async Task<ScheduleResult> UpdateScheduleAsync(Guid scheduleId, IReadOnlyList<Resources> topics, ScheduleEventTrigger metadata, Func<TriggerBuilder, TriggerBuilder> configureTrigger, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // First, remove existing jobs for this schedule
+            var existingJobKeys = await GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
+            if (existingJobKeys.Any())
+            {
+                await UnscheduleAllAsync(existingJobKeys, cancellationToken);
+                Log.Information("Removed {JobCount} existing jobs for schedule {ScheduleId}", existingJobKeys.Count, scheduleId);
+            }
+
+            // Create new jobs with updated configuration
+            return await ScheduleJobsAsync(topics, metadata, configureTrigger, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to update schedule {ScheduleId}", scheduleId);
+            return ScheduleResult.Failure("Failed to update schedule", ex);
+        }
+    }
+    public async Task<bool> PauseJobAsync(Guid scheduleId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var jobKeys = await GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
+            
+            foreach (var jobKeyString in jobKeys)
+            {
+                var jobKey = new Quartz.JobKey(jobKeyString);
+                await scheduler.PauseJob(jobKey, cancellationToken);
+            }
+            
+            Log.Information("Paused {JobCount} jobs for schedule {ScheduleId}", jobKeys.Count, scheduleId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to pause jobs for schedule {ScheduleId}", scheduleId);
+            return false;
+        }
+    }
+    public async Task<bool> ResumeJobAsync(Guid scheduleId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var jobKeys = await GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
+            
+            foreach (var jobKeyString in jobKeys)
+            {
+                var jobKey = new Quartz.JobKey(jobKeyString);
+                await scheduler.ResumeJob(jobKey, cancellationToken);
+            }
+            
+            Log.Information("Resumed {JobCount} jobs for schedule {ScheduleId}", jobKeys.Count, scheduleId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to resume jobs for schedule {ScheduleId}", scheduleId);
+            return false;
+        }
+    }
+    public async Task<IReadOnlyList<string>> GetJobKeysForScheduleAsync(Guid scheduleId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var jobKeys = await scheduler.GetJobKeys(GroupMatcher<Quartz.JobKey>.AnyGroup(), cancellationToken);
+            
+            var matchingJobKeys = new List<string>();
+            
+            foreach (var jobKey in jobKeys)
+            {
+                // Check if the job key contains the schedule ID
+                if (jobKey.Name.Contains($"schedule-{scheduleId}"))
+                {
+                    matchingJobKeys.Add(jobKey.Name);
+                }
+                else
+                {
+                    // Alternative: Check job data for schedule ID
+                    var jobDetail = await scheduler.GetJobDetail(jobKey, cancellationToken);
+                    if (jobDetail?.JobDataMap.ContainsKey("scheduleId") == true)
+                    {
+                        var jobScheduleId = jobDetail.JobDataMap.GetString("scheduleId");
+                        if (Guid.TryParse(jobScheduleId, out var parsedScheduleId) && parsedScheduleId == scheduleId)
+                        {
+                            matchingJobKeys.Add(jobKey.Name);
+                        }
+                    }
+                }
+            }
+            
+            return matchingJobKeys.AsReadOnly();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to get job keys for schedule {ScheduleId}", scheduleId);
+            return Array.Empty<string>();
+        }
+    }
+    public async Task<ScheduleStatus> GetScheduleStatusAsync(Guid scheduleId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var jobKeys = await GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
+            if (!jobKeys.Any())
+            {
+                return ScheduleStatus.NotFound;
+            }
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var allPaused = true;
+            var hasActiveTriggers = false;
+
+            foreach (var jobKeyString in jobKeys)
+            {
+                var jobKey = new Quartz.JobKey(jobKeyString);
+                var triggers = await scheduler.GetTriggersOfJob(jobKey, cancellationToken);
+            
+                foreach (var trigger in triggers)
+                {
+                    var triggerState = await scheduler.GetTriggerState(trigger.Key, cancellationToken);
+                
+                    if (triggerState != TriggerState.Paused)
+                    {
+                        allPaused = false;
+                    }
+                
+                    if (triggerState == TriggerState.Normal)
+                    {
+                        hasActiveTriggers = true;
+                    }
+                }
+            }
+
+            if (allPaused)
+                return ScheduleStatus.Disabled;
+            else if (hasActiveTriggers)
+                return ScheduleStatus.Active;
+            else
+                return ScheduleStatus.InActive;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error getting status for schedule {ScheduleId}", scheduleId);
+            return ScheduleStatus.NotFound;
+        }
+    }
+    public async Task<bool> IsScheduleActiveAsync(Guid scheduleId, CancellationToken cancellationToken = default)
+    {
+        var status = await GetScheduleStatusAsync(scheduleId, cancellationToken);
+        return status == ScheduleStatus.Active;
+    }
+    
+    public async Task<DateTime?> GetNextExecutionTimeAsync(Guid scheduleId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var jobKeys = await GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            DateTime? nextExecution = null;
+            foreach (var jobKeyString in jobKeys)
+            {
+                var jobKey = new Quartz.JobKey(jobKeyString);
+                var triggers = await scheduler.GetTriggersOfJob(jobKey, cancellationToken);
+                foreach (var trigger in triggers)
+                {
+                    var nextFire = trigger.GetNextFireTimeUtc();
+                    if (nextFire.HasValue)
+                    {
+                        if (!nextExecution.HasValue || nextFire.Value.DateTime < nextExecution.Value)
+                        {
+                            nextExecution = nextFire.Value.DateTime;
+                        }
+                    }
+                }
+            }
+            return nextExecution;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error getting next execution time for schedule {ScheduleId}", scheduleId);
+            return null;
+        }
+    }
+
 }

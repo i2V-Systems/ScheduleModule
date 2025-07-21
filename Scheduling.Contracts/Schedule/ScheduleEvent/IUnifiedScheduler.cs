@@ -1,4 +1,6 @@
+using Quartz;
 using Scheduling.Contracts.AttachedResources.Enums;
+using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent.ValueObjects;
 
 namespace Scheduling.Contracts.Schedule.ScheduleEvent;
@@ -43,7 +45,20 @@ public interface IUnifiedScheduler
         string cronExpression, 
         CancellationToken cancellationToken = default);
     Task<ScheduleResult> ScheduleOnceAsync(IReadOnlyList<Resources> topics, ScheduleEventTrigger metadata, DateTime executeAt, CancellationToken cancellationToken = default);
+    
+    // Management operations
     Task<bool> UnscheduleAsync(string jobId, CancellationToken cancellationToken = default);
     Task<bool> UnscheduleAllAsync(IEnumerable<string> jobIds, CancellationToken cancellationToken = default);
+    
+    // operations for update, enable/disable
+    Task<ScheduleResult> UpdateScheduleAsync(Guid scheduleId, IReadOnlyList<Resources> topics, ScheduleEventTrigger metadata, Func<TriggerBuilder, TriggerBuilder> configureTrigger, CancellationToken cancellationToken = default);
+    Task<bool> PauseJobAsync(Guid scheduleId, CancellationToken cancellationToken = default);
+    Task<bool> ResumeJobAsync(Guid scheduleId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetJobKeysForScheduleAsync(Guid scheduleId, CancellationToken cancellationToken = default);
+
+    Task<ScheduleStatus> GetScheduleStatusAsync(Guid scheduleId, CancellationToken cancellationToken = default);
+    Task<bool> IsScheduleActiveAsync(Guid scheduleId, CancellationToken cancellationToken = default);
+    Task<DateTime?> GetNextExecutionTimeAsync(Guid scheduleId, CancellationToken cancellationToken = default);
+    
 }
 

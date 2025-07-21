@@ -5,5 +5,6 @@ public enum ScheduleStatus
     Active ,
     InActive,
     Enabled,
-    Disabled
+    Disabled,
+    NotFound     
 }

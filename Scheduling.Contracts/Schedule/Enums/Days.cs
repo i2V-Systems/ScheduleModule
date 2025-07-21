@@ -1,12 +1,11 @@
 namespace Scheduling.Contracts.Schedule.Enums;
 
 public enum Days
-{
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday
+{  Sunday =0,
+    Monday =1,
+    Tuesday =2,
+    Wednesday =3 ,
+    Thursday =4,
+    Friday =5,
+    Saturday =6
 }

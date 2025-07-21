@@ -14,7 +14,7 @@ namespace Application.Schedule.ScheduleEvent.JobStratgies;
 
 [TransientService]
 [ScheduleStrategy(ScheduleType.Custom)]
-internal class CustomScheduleStrategy : IScheduleJobStrategy
+internal class CustomScheduleStrategy : BaseScheduleJobStrategy
 {
     private readonly ILogger<CustomScheduleStrategy> _logger;
 
@@ -25,9 +25,9 @@ internal class CustomScheduleStrategy : IScheduleJobStrategy
 
     public ScheduleTypeInfo SupportedType => new(ScheduleType.Custom, name: "Custom Schedule", description: "Custom scheduling logic using cron expressions");
 
-    public bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Custom;
+    public override bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Custom;
 
-    public async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
+    public override async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
         if (schedule == null) throw new ArgumentNullException(nameof(schedule));
         if (topics == null) throw new ArgumentNullException(nameof(topics));
