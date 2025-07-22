@@ -38,7 +38,7 @@ public static class ApplicationDependencyInjection
        
        // Auto-register services with attributes (your current approach)
        
-       services.AddServicesOfType<IScopedService>();
+        services.AddServicesOfType<IScopedService>();
         services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();
         services.AddServicesOfType<ITransientService>();
         services.AddServicesWithAttributeOfType<TransientServiceAttribute>();

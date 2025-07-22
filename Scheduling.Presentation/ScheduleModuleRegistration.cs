@@ -4,6 +4,7 @@ using Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Extensions;
+using Scheduling.Contracts.Extensions;
 
 namespace Presentation;
 
@@ -21,26 +22,12 @@ public static class ScheduleModuleRegistration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // // Set current scheduler type based on configuration
-        // var schedulingService = configuration.GetValue<string>("SchedulingService", "coravel");
-        // CurrentSchedulerType = schedulingService.ToLowerInvariant() switch
-        // {
-        //     "coravel" => SchedulerType.Coravel,
-        //     "hangfire" => SchedulerType.Hangfire,
-        //     _ => SchedulerType.Coravel
-        // };
-        // var scheduleAssembly = Assembly.Load("Scheduling.Presentation");
-        // services.AddMvc()
-        //     .AddApplicationPart(scheduleAssembly)
-        //     .AddControllersAsServices();
-        // // Register services in logical order
-        // services.AddPresentationServices();
-
         return services;
     }
     
     public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddContractServices(configuration);
         services.AddInfrastructureServices(configuration);
         services.AddApplicationServices(configuration);
         

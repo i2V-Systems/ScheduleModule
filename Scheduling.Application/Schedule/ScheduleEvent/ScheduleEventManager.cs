@@ -4,6 +4,7 @@ using Application.AttachedResources;
 using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.DTOs;
 using Scheduling.Contracts.Schedule.Enums;
@@ -18,12 +19,12 @@ internal class ScheduleEventManager :IScheduleEventManager
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
     
-    private readonly  ResourceManager _resourceManager;
+    private readonly  IResourceManager _resourceManager;
     
-    public ScheduleEventManager(IServiceProvider serviceProvider,IConfiguration configuration)
+    public ScheduleEventManager(IServiceProvider serviceProvider,IConfiguration configuration,IResourceManager resourceManager)
     {
         _serviceProvider = serviceProvider;
-        _resourceManager = new ResourceManager(configuration,serviceProvider);
+        _resourceManager = resourceManager;
     }
  
     

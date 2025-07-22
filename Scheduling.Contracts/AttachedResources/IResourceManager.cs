@@ -4,8 +4,6 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Scheduling.Contracts.AttachedResources;
 
-[SingletonService]
-
 public interface IResourceManager
 {
     public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId);

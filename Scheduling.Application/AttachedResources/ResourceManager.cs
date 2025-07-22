@@ -11,7 +11,6 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.AttachedResources;
 
-[SingletonService]
 internal  class ResourceManager :IResourceManager
 {
      private  readonly  IServiceProvider _serviceProvider;

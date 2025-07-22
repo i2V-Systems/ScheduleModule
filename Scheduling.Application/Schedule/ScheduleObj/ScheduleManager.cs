@@ -1,12 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using Application.AttachedResources;
-using Application.Schedule.ScheduleEvent;
 using CommonUtilityModule.CrudUtilities;
 using CommonUtilityModule.Manager;
-using Coravel.Events.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule;
 using Scheduling.Contracts.Schedule.DTOs;
@@ -20,14 +18,14 @@ namespace Application.Schedule.ScheduleObj
         private readonly IServiceProvider _serviceProvider;
       
         private readonly IConfiguration _configuration;
-        private readonly ResourceManager _resourceManager;
+        private readonly IResourceManager _resourceManager;
         private readonly IScheduleEventManager _scheduleEventManager;
 
         public static ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
         public static ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
 
         public ScheduleManager(IConfiguration configuration,
-            IServiceProvider serviceProvider,ResourceManager resourceManager,IScheduleEventManager scheduleEventManager
+            IServiceProvider serviceProvider,IResourceManager resourceManager,IScheduleEventManager scheduleEventManager
         )
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));

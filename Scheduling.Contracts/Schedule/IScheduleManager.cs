@@ -5,8 +5,6 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Scheduling.Contracts.Schedule;
 
-
-[SingletonService]
 public interface IScheduleManager
 {
         // Initialization and lifecycle
