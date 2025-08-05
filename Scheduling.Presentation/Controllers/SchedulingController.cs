@@ -60,6 +60,15 @@ namespace Presentation.Controllers
                 return BadRequest(ex.Message.ToString());
             }
         }
+        [HttpGet("resources")]
+        public  IEnumerable<ScheduleResourceDto> GetAllResources()
+        {
+            IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetAllCachedResources();
+            return resources;
+        }
+       
+      
+
         
         [HttpGet("{id}")]
         public  IActionResult Get([FromRoute] Guid id)
