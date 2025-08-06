@@ -323,7 +323,7 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _resourceManager.DeleteScheduleResourceMap(data.Ids);
+                await _resourceManager.DeleteScheduleResourceMap(data.Ids,true);
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
                 _scheduleManager.UpdateInMemory(schedule);
                 var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(data.Schedule.schedules.Id);

@@ -20,7 +20,6 @@ internal class ResourceManager : IResourceManager
         IServiceProvider serviceProvider
         )
     {
-
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         InitializeAsync();
@@ -96,6 +95,7 @@ internal class ResourceManager : IResourceManager
             var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
             await crudService.AddResourceMappingAsync(map);
             ScheduleResourcesMap.TryAdd(map.Id, map);
+            
         }
         catch (Exception ex)
         {
