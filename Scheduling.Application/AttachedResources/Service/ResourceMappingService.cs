@@ -34,6 +34,19 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
+    public  async Task UpdateResourceMappingAsync(ScheduleResourceDto dto)
+    {
+        try
+        {
+            var resource = _mapper.Map<ScheduleResourceMapping>(dto);
+            _resourceRepository.Update(resource);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating resource mapping");
+            throw;
+        }
+    }
     public async Task<IEnumerable<ScheduleResourceDto>> GetAllResourceMappingAsync()
     {
         try

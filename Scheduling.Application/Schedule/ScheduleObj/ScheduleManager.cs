@@ -249,7 +249,7 @@ namespace Application.Schedule.ScheduleObj
         public void RemoveFromMemory(Guid id)
         {
             Schedules.TryRemove(id, out _);
-            _resourceManager.RemoveFromMemory(id);
+            _resourceManager.RemoveFromMemorywithScheduleId(id);
             ScheduleDetailsMap.TryRemove(id, out _);
         }
 
