@@ -49,6 +49,7 @@ public static class SchedulerServiceExtensions
                     },
                     dataSourceName: "schedulers");
                 s.UseNewtonsoftJsonSerializer();
+                s.PerformSchemaValidation = false;
                 s.UseClustering(c =>
                 {
                     c.CheckinInterval = TimeSpan.FromSeconds(20);

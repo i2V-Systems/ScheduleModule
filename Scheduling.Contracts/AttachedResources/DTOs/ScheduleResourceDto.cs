@@ -8,9 +8,9 @@ public record ScheduleResourceDto(Guid MapId, Guid ScheduleId, Guid ResourceId, 
 
 public record DetachScheduleRequest(List<Guid> Ids, ScheduleAllDetails Schedule);
 
-public record AttachUpdateDto(
-    Guid ResourceId,
-    Resources ResourceType,
-    List<Guid> ScheduleIds
-);
+// public record AttachUpdateDto(
+//     Guid ResourceId,
+//     Resources ResourceType,
+//     List<Guid> ScheduleIds
+// );
 
