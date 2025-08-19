@@ -1,32 +1,31 @@
-using System.Collections.Concurrent;
 using Application.AttachedResources.Service;
-using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
-using Scheduling.Contracts.Schedule.DTOs;
+using Scheduling.Contracts.AttachedResources.Enums;
 using Serilog;
-using TanvirArjel.Extensions.Microsoft.DependencyInjection;
+using System.Collections.Concurrent;
+using Scheduling.Contracts.Schedule.DTOs;
 
 namespace Application.AttachedResources;
 
-internal  class ResourceManager :IResourceManager
+internal class ResourceManager : IResourceManager
 {
-     private  readonly  IServiceProvider _serviceProvider;
-     private   readonly  IConfiguration _configuration;
-     public static ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
-        
-        public ResourceManager(IConfiguration configuration,
-            IServiceProvider serviceProvider
-            )
-        {
-        
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            InitializeAsync();
-        }
-        
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IConfiguration _configuration;
+    public static ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
+    public event EventHandler<ScheduleResourceDto> ScheduleResourcePublish;
+
+    public ResourceManager(IConfiguration configuration,
+        IServiceProvider serviceProvider
+        )
+    {
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        InitializeAsync();
+    }
+
 
         public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId)
         {
@@ -41,16 +40,16 @@ internal  class ResourceManager :IResourceManager
         }
         
 
-        public int GetLoadedResourceCount()
-        {
-            return ScheduleResourcesMap.Count;
-        }
-        
+    public int GetLoadedResourceCount()
+    {
+        return ScheduleResourcesMap.Count;
+    }
 
-        public List<ScheduleResourceDto> GetAllCachedResources()
-        {
-            return ScheduleResourcesMap.Values.ToList();
-        }
+
+    public List<ScheduleResourceDto> GetAllCachedResources()
+    {
+        return ScheduleResourcesMap.Values.ToList();
+    }
 
         public async Task RefreshCacheAsync()
         {
@@ -130,7 +129,7 @@ internal  class ResourceManager :IResourceManager
                 Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
             }
         }
-        public async Task<Guid> DeleteScheduleResourceMap(Guid id)
+        public async Task<Guid> DeleteScheduleResourceMap(Guid id, bool Notify = false)
         {
             Guid mapId = Guid.Empty;
             try
@@ -144,6 +143,10 @@ internal  class ResourceManager :IResourceManager
                     .Select(s => s.Key)
                     .FirstOrDefault();
                 ScheduleResourcesMap.TryRemove(mapId, out var map);
+                if (Notify)
+                {
+                    ScheduleResourcePublish?.Invoke(this, map);
+                }
                 return mapId;
                 
 

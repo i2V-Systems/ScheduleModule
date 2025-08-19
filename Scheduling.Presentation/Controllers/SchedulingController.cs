@@ -147,7 +147,7 @@ namespace Presentation.Controllers
             try
             {
                 ScheduleAllDetails? scheduleWithAllDetails = _scheduleManager.GetScheduleDetailsFromCache(id);
-                _scheduleManager.DeleteScheduleAsync(id);
+                await _scheduleManager.DeleteScheduleAsync(id);
                 var objectToSend = new Dictionary<string, dynamic>()
                 {
                     {
@@ -235,6 +235,79 @@ namespace Presentation.Controllers
                 throw;
             }
         }
+
+        [HttpPost("AttachOrUpdateSchedules")]
+        public async Task<IActionResult> AttachOrUpdateSchedules([FromBody] AttachUpdateDto dto)
+        {
+            try
+            {
+                // Step 1: Get existing mappings
+                var existingMappings = _resourceManager.GetScheduleMappingsByResource(dto.ResourceId, dto.ResourceType);
+                var existingScheduleIds = existingMappings.Select(m => m.ScheduleId).ToHashSet();
+
+                // Step 2: Distinct new schedules
+                var newScheduleIds = dto.ScheduleIds.Distinct().ToHashSet();
+
+                // Step 3: Determine schedules to add and remove
+                var schedulesToRemoveIds = existingScheduleIds.Except(newScheduleIds).ToList();
+                var schedulesToAdd = newScheduleIds.Except(existingScheduleIds).ToList();
+
+                // Step 4: Get mappings to remove (by ID)
+                var mappingsToRemove = existingMappings
+                    .Where(m => schedulesToRemoveIds.Contains(m.ScheduleId))
+                    .Select(m => m.Id)
+                    .ToList();
+
+                // Step 5: Remove mappings from database and memory
+                if (mappingsToRemove.Any())
+                {
+                    await _resourceManager.DeleteScheduleResourceMap(mappingsToRemove);
+                }
+
+                // Step 6: Add new mappings to database and memory
+                foreach (var scheduleId in schedulesToAdd)
+                {
+                    var mapDto = new ScheduleResourceDto(Guid.NewGuid(), scheduleId, dto.ResourceId, dto.ResourceType);
+                    await _resourceManager.AddScheduleResourceMap(mapDto);
+                }
+
+                // Step 7: Update in-memory schedule for affected schedule IDs
+                var affectedScheduleIds = schedulesToAdd.Union(schedulesToRemoveIds);
+                foreach (var scheduleId in affectedScheduleIds)
+                {
+                    var schedule = _scheduleManager.GetScheduleFromCache(scheduleId);
+                    if (schedule != null)
+                    {
+                        _scheduleManager.UpdateInMemory(schedule);
+                    }
+                }
+
+                // Step 8: Prepare final list of schedule details
+                var finalScheduleDetails = newScheduleIds
+                    .Select(id => _scheduleManager.GetScheduleDetailsFromCache(id))
+                    .Where(details => details != null)
+                    .ToList();
+
+                // Step 9: Notify clients about updated state (if needed)
+                if (finalScheduleDetails.Any())
+                {
+                    var objectToSend = new Dictionary<string, dynamic>
+                    {
+                        { "scheduleAllDetailsList", finalScheduleDetails }
+                    };
+
+                    await _scheduleManager.SendCrudDataToClientAsync(CrudMethodType.Update, objectToSend);
+                }
+
+                return Ok(finalScheduleDetails);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("AttachOrUpdateSchedules error: {Message}", ex.Message);
+                return BadRequest("Failed to update schedule mappings");
+            }
+        }
+
 
         [HttpPut("removeMultipleAttachedResource")]
         public async Task<IActionResult> DetachMultipleSchedule([FromBody] DetachScheduleRequest data)
