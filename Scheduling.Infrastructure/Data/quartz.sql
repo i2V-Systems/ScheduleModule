@@ -67,7 +67,7 @@ CREATE TABLE scheduler."qrtz_simple_triggers"
         REFERENCES scheduler.qrtz_triggers(sched_name,trigger_name,trigger_group) ON DELETE CASCADE
 );
 
-CREATE TABLE scheduler."QRTZ_SIMPROP_TRIGGERS"
+CREATE TABLE scheduler."qrtz_simprop_triggers"
 (
     sched_name TEXT NOT NULL,
     trigger_name TEXT NOT NULL ,
