@@ -4,5 +4,6 @@ public enum Resources
 {
     Config,
     VideoSource,
-    User
+    User,
+    Report
 }
