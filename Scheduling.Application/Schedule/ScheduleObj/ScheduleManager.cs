@@ -243,6 +243,7 @@ namespace Application.Schedule.ScheduleObj
                     AttachedResources = resourceDtos ?? null
                 };
                 AddOrUpdateScheduleDetails(updatedDetails);
+                
             }
         }
 

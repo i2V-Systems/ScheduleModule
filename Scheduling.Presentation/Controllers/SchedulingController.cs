@@ -395,7 +395,7 @@ namespace Presentation.Controllers
             {
                 await _resourceManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                _scheduleManager.UpdateInMemory(schedule);
+                await _scheduleManager.UpdateScheduleAsync(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
                     new List<ScheduleAllDetails?>();
               

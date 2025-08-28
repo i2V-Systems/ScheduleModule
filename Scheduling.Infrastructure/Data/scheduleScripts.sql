@@ -19,12 +19,14 @@ CREATE TABLE public."Schedule" (
 -- Create ScheduleResourceMapping table
 
 CREATE TABLE public."ScheduleResourceMapping" (
-                                                  "Id" UUID PRIMARY KEY,
-                                                  "ScheduleId" UUID NOT NULL,
-                                                  "ResourceId" UUID NOT NULL,
-                                                  "ResourceType" VARCHAR(50) NOT NULL,
-                                                   FOREIGN KEY ("ScheduleId") REFERENCES public."Schedule"("Id") ON DELETE CASCADE
+    "Id" UUID PRIMARY KEY,
+    "ScheduleId" UUID NOT NULL,
+    "ResourceId" UUID NOT NULL,
+    "ResourceType" VARCHAR(50) NOT NULL,
+    "metaData" text NULL,
+    FOREIGN KEY ("ScheduleId") REFERENCES public."Schedule"("Id") ON DELETE CASCADE
 );
+
 
 ALTER TABLE public."ScheduleResourceMapping"
     ADD CONSTRAINT uk_schedule_resource_type

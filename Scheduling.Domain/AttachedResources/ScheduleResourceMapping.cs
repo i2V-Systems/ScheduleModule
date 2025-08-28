@@ -11,15 +11,18 @@ public class ScheduleResourceMapping :BaseEntity
     
     public Resources ResourceType { get; set; }
 
+    public string? metaData { get; set; }
+
     public ScheduleResourceMapping()
     {
         ScheduleId = new Guid();
     }
 
-    public ScheduleResourceMapping(Guid resId, Guid schId, Resources type)
+    public ScheduleResourceMapping(Guid resId, Guid schId, Resources type, dynamic data)
     {
         ScheduleId = schId;
         ResourceId = resId;
         ResourceType = type;
+        metaData = data;
     }
 }
