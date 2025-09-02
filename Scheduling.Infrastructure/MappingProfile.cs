@@ -11,7 +11,7 @@ public class MappingProfile: Profile
     {
         CreateMap<Domain.Schedule.Schedule, ScheduleDto>();
         CreateMap<ScheduleDto, Domain.Schedule.Schedule>();
-        CreateMap<ScheduleResourceMapping, ScheduleResourceDto>();
-        CreateMap<ScheduleResourceDto, ScheduleResourceMapping>();
+        CreateMap<Domain.AttachedResources.ScheduleResourceMapping, ScheduleResourceDto>();
+        CreateMap<ScheduleResourceDto, Domain.AttachedResources.ScheduleResourceMapping>();
     }
 }

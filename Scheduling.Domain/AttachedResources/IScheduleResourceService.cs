@@ -5,7 +5,7 @@ namespace Domain.AttachedResources;
 public interface  IScheduleResourceService
 {
     // Resource mapping methods
-    Task AddResourceMappingAsync(ScheduleResourceDto mapping);
+    Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto mapping);
     Task<IEnumerable<ScheduleResourceDto>> GetAllResourceMappingAsync();
     Task DeleteResourceMappingAsync(Guid mappingId);
 }

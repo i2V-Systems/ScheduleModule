@@ -16,7 +16,7 @@ namespace Application.Schedule.ScheduleObj
     internal class ScheduleManager : IScheduleManager
     {
         private readonly IServiceProvider _serviceProvider;
-      
+        private bool _initialized = false;
         private readonly IConfiguration _configuration;
         private readonly IResourceManager _resourceManager;
         private readonly IScheduleEventManager _scheduleEventManager;
@@ -33,7 +33,37 @@ namespace Application.Schedule.ScheduleObj
 
             _resourceManager = resourceManager;
             _scheduleEventManager = scheduleEventManager;
-             InitializeAsync();
+             // InitializeAsync();
+        }
+        public async Task InitializeAsync()
+        {
+            if (_initialized) return;
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
+                var allSchedules = await crudService.GetAllAsync();
+                foreach (var schedule in allSchedules)
+                {
+                    Schedules.TryAdd(schedule.Id, schedule);
+                }
+
+                await UpdateScheduleDetails(Schedules.Values);
+                _scheduleEventManager.executeLoadedTasks(Schedules);
+                _initialized = true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Exception in initialised schedules");
+            }
+          
+        }
+        private async Task EnsureInitializedAsync()
+        {
+            if (!_initialized)
+            {
+                await InitializeAsync();
+            }
         }
 
         // Query methods implementation
@@ -82,19 +112,7 @@ namespace Application.Schedule.ScheduleObj
             await InitializeAsync();
         }
 
-        public async Task InitializeAsync()
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            var allSchedules = await crudService.GetAllAsync();
-            foreach (var schedule in allSchedules)
-            {
-                Schedules.TryAdd(schedule.Id, schedule);
-            }
-
-            UpdateScheduleDetails(Schedules.Values);
-            _scheduleEventManager.executeLoadedTasks(Schedules);
-        }
+        
 
         public ScheduleDto Get(Guid id) =>
             Schedules.TryGetValue(id, out var schedule) ? schedule : null;

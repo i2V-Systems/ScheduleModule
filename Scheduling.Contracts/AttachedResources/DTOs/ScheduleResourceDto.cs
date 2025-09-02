@@ -4,7 +4,8 @@ using Scheduling.Contracts.Schedule.DTOs;
 
 namespace Scheduling.Contracts.AttachedResources.DTOs;
 
-public record ScheduleResourceDto(Guid MapId, Guid ScheduleId, Guid ResourceId, Resources ResourceType,string? metaData);
+public record ScheduleResourceDto(
+    Guid Id, Guid ScheduleId, Guid ResourceId, Resources ResourceType,string? metaData);
 
 public record DetachScheduleRequest(List<Guid> Ids, ScheduleAllDetails Schedule);
 

@@ -6,16 +6,23 @@ namespace Scheduling.Contracts;
 
 public abstract class BaseEntity : IEntityBase
 {
-    public Guid Id { get; set; }
+    private Guid _id;
+    public Guid Id 
+    { 
+        get => _id;
+        set 
+        {
+            if (value != Guid.Empty)
+            {
+                _id = value;
+            }
+           
+        }
+    }
     
     protected BaseEntity()
     {
         Id =  NewId.NextSequentialGuid();
-    }
-    
-    public static Guid GenerateGuid()
-    {
-        return NewId.NextSequentialGuid();
     }
 
     protected BaseEntity(Guid id)

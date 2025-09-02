@@ -21,12 +21,16 @@ public class ResourceMappingService :IScheduleResourceService
         _mapper = mapper;
     }
     
-    public  async Task AddResourceMappingAsync(ScheduleResourceDto dto)
+    public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto)
     {
         try
         {
-            var resource = _mapper.Map<ScheduleResourceMapping>(dto);
+            var resource = _mapper.Map<Domain.AttachedResources.ScheduleResourceMapping>(dto);
             await _resourceRepository.AddAsync(resource);
+            
+            _logger.LogInformation("mapping created with ID {ScheduleId}", resource.Id);
+            dto= _mapper.Map<ScheduleResourceDto>(resource);
+            return dto;
         }
         catch (Exception ex)
         {
@@ -34,12 +38,16 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
-    public  async Task UpdateResourceMappingAsync(ScheduleResourceDto dto)
+    public  async Task<ScheduleResourceDto> UpdateResourceMappingAsync(ScheduleResourceDto dto)
     {
         try
         {
             var resource = _mapper.Map<ScheduleResourceMapping>(dto);
             _resourceRepository.Update(resource);
+            
+            _logger.LogInformation("mapping updated with ID {ScheduleId}", resource.Id);
+            dto= _mapper.Map<ScheduleResourceDto>(resource);
+            return dto;
         }
         catch (Exception ex)
         {
@@ -52,7 +60,8 @@ public class ResourceMappingService :IScheduleResourceService
         try
         {
             var entities = await _resourceRepository.GetAllAsync();
-            return entities.Select(e =>  _mapper.Map<ScheduleResourceDto>(e));
+            var dtos = entities.Select(e =>  _mapper.Map<ScheduleResourceDto>(e));
+            return dtos;
         }
         catch (Exception ex)
         {

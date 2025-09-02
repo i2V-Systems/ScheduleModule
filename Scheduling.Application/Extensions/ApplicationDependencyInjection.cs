@@ -28,11 +28,13 @@ public static class ApplicationDependencyInjection
        // Core Application Services
        services.AddTransient<IScheduleEventService,ScheduleEventService>();
        services.AddSingleton<IResourceManager, ResourceManager>();
+       services.AddHostedService<ResourceInitializationService>();
        services.AddTransient<IScheduleValidator, ScheduleValidator>();
        services.AddTransient<IScheduleStrategyFactory, ScheduleStrategyFactory>();
        services.AddTransient<IJobKeyGenerator, JobKeyGenerator>();
        services.AddSingleton<IScheduleEventManager, ScheduleEventManager>();
        services.AddSingleton<IScheduleManager, ScheduleManager>();
+       services.AddHostedService<ScheduleInitializationService>();
        
        services.AddSchedulingScheduler(configuration);
        
