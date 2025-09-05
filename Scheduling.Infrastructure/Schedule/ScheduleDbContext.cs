@@ -1,8 +1,7 @@
 ﻿using Domain.AttachedResources;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Newtonsoft.Json;
-using Scheduling.Contracts.AttachedResources.Enums;
 using Scheduling.Contracts.Schedule.Enums;
 
 namespace Infrastructure.Schedule
@@ -20,39 +19,42 @@ namespace Infrastructure.Schedule
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.Type)
-                .HasConversion(
-                    new EnumToStringConverter<ScheduleType>()
-                );
-
-            // Configure the SubType property to convert Enum_ScheduleSubType? to string in the database
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.SubType)
-                .HasConversion(
-                    new EnumToStringConverter<ScheduleSubType>()
-                );
-            
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.Status)
-                .HasConversion(new EnumToStringConverter<ScheduleStatus>());
-            
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.StartDays)
-                .HasConversion(
-                    v => JsonConvert.SerializeObject(v ?? new List<Days>()),
-                    v => string.IsNullOrEmpty(v) ? new List<Days>() : JsonConvert.DeserializeObject<List<Days>>(v) ?? new List<Days>()
-                );
-            modelBuilder.Entity<ScheduleResourceMapping>()
-                .Property(e => e.ResourceType)
-                .HasConversion(new EnumToStringConverter<Resources>());
-            
-            modelBuilder
-                .Entity<ScheduleResourceMapping>()
-                .HasKey(pvs => new { pvs.ScheduleId, pvs.ResourceId });
-
             base.OnModelCreating(modelBuilder);
+
+            // Configure Schedule entity
+            modelBuilder.Entity<Domain.Schedule.Schedule>(entity =>
+            {
+                entity.Property(e => e.Type)
+                    .IsRequired();
+            
+                entity.Property(e => e.SubType)
+                    .IsRequired();
+            
+                entity.Property(e => e.Status)
+                    .IsRequired();
+            
+                entity.Property(e => e.StartDays)
+                    .HasConversion(
+                        v => JsonConvert.SerializeObject(v ?? new List<Days>()),
+                        v => string.IsNullOrEmpty(v)
+                            ? new List<Days>()
+                            : JsonConvert.DeserializeObject<List<Days>>(v) ?? new List<Days>()
+                    ) .Metadata.SetValueComparer(new ValueComparer<List<Days>>(
+                        (c1, c2) => c1.SequenceEqual(c2), // Equality check
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())), // Hash code
+                        c => c.ToList() // Snapshot for EF tracking
+                    ));
+            });
+            
+            // Configure ScheduleResourceMapping entity
+            modelBuilder.Entity<ScheduleResourceMapping>(entity =>
+            {
+                entity.Property(e => e.ResourceType)
+                    .IsRequired();
+            
+                // Uncomment if composite key is needed
+                // entity.HasKey(pvs => new { pvs.ScheduleId, pvs.ResourceId });
+            });
         }
     }
-
 }

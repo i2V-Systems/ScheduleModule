@@ -28,19 +28,11 @@ public static class ScheduleModuleRegistration
     
     public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddContractServices(configuration);
+        // services.AddContractServices(configuration);
         services.AddInfrastructureServices(configuration);
         services.AddApplicationServices(configuration);
         
         var scheduleAssembly = Assembly.Load("Scheduling.Presentation");
-        var businessAssembly = Assembly.Load("BusinessLayer");
-
-        // Register services from both assemblies with interface support
-        // Use the distinct method names to avoid ambiguity
-        services.AddServicesByAttribute<TransientServiceAttribute>(
-            "Scheduling.Presentation",
-            "BusinessLayer");
-
         // Also register other service types
         //services.AddServicesByAttribute<ScopedServiceAttribute>(
         //    "Scheduling.Presentation",

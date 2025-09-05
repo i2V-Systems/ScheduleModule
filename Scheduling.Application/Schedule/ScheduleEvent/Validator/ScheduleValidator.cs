@@ -4,7 +4,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleEvent.Validator;
 
-[TransientService]
+// [TransientService]
 public class ScheduleValidator : IScheduleValidator
 {
     public ValidationResult ValidateSchedule(ScheduleDto schedule)

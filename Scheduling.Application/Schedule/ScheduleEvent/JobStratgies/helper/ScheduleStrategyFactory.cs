@@ -7,7 +7,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleEvent.JobStratgies.helper;
 
-[TransientService]
+// [TransientService]
 internal class ScheduleStrategyFactory: IScheduleStrategyFactory
 {
     private readonly Dictionary<string, IScheduleJobStrategy> _instanceCache;

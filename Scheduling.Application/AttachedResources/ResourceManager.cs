@@ -33,7 +33,7 @@ internal class ResourceManager : IResourceManager
         if (_initialized) return;
         try
         {
-            await LoadScheduleResourceMapping();
+            // await LoadScheduleResourceMapping();
             _initialized = true;
         }
         catch (Exception ex)

@@ -7,7 +7,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleObj
 {
-    [TransientService]
+    // [TransientService]
     internal class ScheduleCrudService : IScheduleCRUDService
     {
         private readonly IMapper _mapper;
@@ -41,7 +41,20 @@ namespace Application.Schedule.ScheduleObj
             try
             {
                 var entities = await _schedulesRepository.GetAllAsync();
-                return entities.Select(e => _mapper.Map<ScheduleDto>(e));
+                var res = entities.Select(e => new ScheduleDto(
+                    e.Id,
+                    e.Name,
+                    e.Details,
+                    e.StartDateTime,
+                    e.EndDateTime,
+                    e.Type,
+                    e.SubType,
+                    e.NoOfDays,
+                    e.StartDays,
+                    e.Status,
+                    e.RecurringTime
+                ));
+                return res;
             }
             catch (Exception ex)
             {

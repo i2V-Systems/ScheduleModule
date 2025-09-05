@@ -7,7 +7,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.AttachedResources.Service;
 
-[TransientService]
+// [TransientService]
 public class ResourceMappingService :IScheduleResourceService
 {
     private readonly IScheduleRepository<ScheduleResourceMapping> _resourceRepository;

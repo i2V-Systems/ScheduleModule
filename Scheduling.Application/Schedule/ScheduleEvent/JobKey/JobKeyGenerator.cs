@@ -4,7 +4,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Application.Schedule.ScheduleEvent.JobKey;
 
-[TransientService]
+// [TransientService]
 public class JobKeyGenerator : IJobKeyGenerator
 {
     public string GenerateJobKey(Resources topic, ScheduleEventTrigger metadata)

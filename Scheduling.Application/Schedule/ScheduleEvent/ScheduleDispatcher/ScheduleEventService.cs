@@ -11,7 +11,7 @@ using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 {
-    [TransientService]
+
     public class ScheduleEventService:IScheduleEventService
     {
         private readonly IScheduleStrategyFactory _strategyFactory;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using Application.Schedule.ScheduleEvent;
 using CommonUtilityModule.CrudUtilities;
 using CommonUtilityModule.Manager;
 using Microsoft.Extensions.Configuration;
@@ -19,13 +20,13 @@ namespace Application.Schedule.ScheduleObj
         private bool _initialized = false;
         private readonly IConfiguration _configuration;
         private readonly IResourceManager _resourceManager;
-        private readonly IScheduleEventManager _scheduleEventManager;
+        private readonly ScheduleEventManager _scheduleEventManager;
 
         public static ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
         public static ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
 
         public ScheduleManager(IConfiguration configuration,
-            IServiceProvider serviceProvider,IResourceManager resourceManager,IScheduleEventManager scheduleEventManager
+            IServiceProvider serviceProvider,IResourceManager resourceManager,ScheduleEventManager scheduleEventManager
         )
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -43,13 +44,13 @@ namespace Application.Schedule.ScheduleObj
                 using var scope = _serviceProvider.CreateScope();
                 var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
                 var allSchedules = await crudService.GetAllAsync();
-                foreach (var schedule in allSchedules)
-                {
-                    Schedules.TryAdd(schedule.Id, schedule);
-                }
+                // foreach (var schedule in allSchedules)
+                // {
+                //     Schedules.TryAdd(schedule.Id, schedule);
+                // }
 
-                await UpdateScheduleDetails(Schedules.Values);
-                _scheduleEventManager.executeLoadedTasks(Schedules);
+                // await UpdateScheduleDetails(Schedules.Values);
+                // _scheduleEventManager.executeLoadedTasks(Schedules);
                 _initialized = true;
             }
             catch (Exception ex)
