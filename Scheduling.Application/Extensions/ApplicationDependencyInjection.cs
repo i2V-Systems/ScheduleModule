@@ -21,6 +21,7 @@ namespace Application.Extensions;
 
 public static class ApplicationDependencyInjection
 {
+    private static IServiceProvider ServiceProvider;
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
     { 
        
@@ -28,13 +29,13 @@ public static class ApplicationDependencyInjection
        // Core Application Services
        services.AddTransient<IScheduleEventService,ScheduleEventService>();
        services.AddSingleton<IResourceManager, ResourceManager>();
-       services.AddHostedService<ResourceInitializationService>();
+       // services.AddHostedService<ResourceInitializationService>();
        services.AddTransient<IScheduleValidator, ScheduleValidator>();
        services.AddTransient<IScheduleStrategyFactory, ScheduleStrategyFactory>();
        services.AddTransient<IJobKeyGenerator, JobKeyGenerator>();
        services.AddSingleton<IScheduleEventManager, ScheduleEventManager>();
        services.AddSingleton<IScheduleManager, ScheduleManager>();
-       services.AddHostedService<ScheduleInitializationService>();
+       // services.AddHostedService<ScheduleInitializationService>();
        
        services.AddSchedulingScheduler(configuration);
        
@@ -54,5 +55,20 @@ public static class ApplicationDependencyInjection
             );
 
         return services;
+    }
+
+    public static async Task InitialiseManagers(IServiceProvider serviceProvider)
+    {
+        ServiceProvider = serviceProvider;
+        var scheduleManager = serviceProvider.GetRequiredService<IScheduleManager>();
+        if (scheduleManager is ScheduleManager manager)
+        {
+            await manager.InitializeAsync();
+        }
+        var resourcemanager = serviceProvider.GetRequiredService<IResourceManager>();
+        if (resourcemanager is ResourceManager resManager)
+        {
+            await resManager.InitializeAsync();
+        }
     }
 }
