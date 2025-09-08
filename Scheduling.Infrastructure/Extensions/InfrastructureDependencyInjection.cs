@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pgvector.EntityFrameworkCore;
 
 namespace Infrastructure.Extensions;
 
@@ -26,7 +27,11 @@ public static class InfrastructureDependencyInjection
         {
             options.UseNpgsql(
                     configuration.GetConnectionString("analytic"),
-                    b => b.MigrationsAssembly("DataLayer"))
+                    b =>   {
+                            b.MigrationsAssembly("DataLayer");
+                            b.UseVector();
+                        }
+                        )
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .EnableSensitiveDataLogging();
         }, ServiceLifetime.Scoped);
