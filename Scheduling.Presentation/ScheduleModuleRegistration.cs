@@ -17,6 +17,7 @@ public enum SchedulerType
 
 public static class ScheduleModuleRegistration
 {
+    private static IServiceProvider ServiceProvider;
     public static SchedulerType CurrentSchedulerType { get; private set; }
     
     public static IServiceCollection AddSchedulingModule(
@@ -25,7 +26,13 @@ public static class ScheduleModuleRegistration
     {
         return services;
     }
-    
+
+    public static async Task InitializeManager(IServiceProvider serviceProvider)
+    {
+        ServiceProvider = serviceProvider;
+        await ApplicationDependencyInjection.InitialiseManagers(serviceProvider);
+    }
+
     public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddContractServices(configuration);

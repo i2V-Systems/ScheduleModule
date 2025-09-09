@@ -1,4 +1,4 @@
-create schema scheduler;
+create schema IF NOT EXISTS scheduler;
 set client_min_messages = WARNING;
 
 DROP TABLE IF EXISTS scheduler."qrtz_fired_triggers";
@@ -16,10 +16,10 @@ set client_min_messages = NOTICE;
 
 
 
-CREATE TABLE scheduler."qrtz_job_details"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_job_details"
 (
     sched_name TEXT NOT NULL,
-    job_name  TEXT NOT NULL,
+job_name  TEXT NOT NULL,
     job_group TEXT NOT NULL,
     description TEXT NULL,
     job_class_name   TEXT NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE scheduler."qrtz_job_details"
     job_data BYTEA NULL,
     PRIMARY KEY (sched_name,job_name,job_group)
 );
-CREATE TABLE scheduler."qrtz_triggers"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_triggers"
 (
     sched_name TEXT NOT NULL,
     trigger_name TEXT NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE scheduler."qrtz_triggers"
 );
 
 
-CREATE TABLE scheduler."qrtz_simple_triggers"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_simple_triggers"
 (
     sched_name TEXT NOT NULL,
     trigger_name TEXT NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE scheduler."qrtz_simple_triggers"
         REFERENCES scheduler.qrtz_triggers(sched_name,trigger_name,trigger_group) ON DELETE CASCADE
 );
 
-CREATE TABLE scheduler."qrtz_simprop_triggers"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_simprop_triggers"
 (
     sched_name TEXT NOT NULL,
     trigger_name TEXT NOT NULL ,
@@ -89,7 +89,7 @@ CREATE TABLE scheduler."qrtz_simprop_triggers"
         REFERENCES scheduler.qrtz_triggers(sched_name,trigger_name,trigger_group) ON DELETE CASCADE
 );
 
-CREATE TABLE scheduler."qrtz_cron_triggers"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_cron_triggers"
 (
     sched_name TEXT NOT NULL,
     trigger_name TEXT NOT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE scheduler."qrtz_cron_triggers"
         REFERENCES scheduler.qrtz_triggers(sched_name,trigger_name,trigger_group) ON DELETE CASCADE
 );
 
-CREATE TABLE scheduler."qrtz_blob_triggers"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_blob_triggers"
 (
     sched_name TEXT NOT NULL,
     trigger_name TEXT NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE scheduler."qrtz_blob_triggers"
         REFERENCES scheduler.qrtz_triggers(sched_name,trigger_name,trigger_group) ON DELETE CASCADE
 );
 
-CREATE TABLE scheduler."qrtz_calendars"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_calendars"
 (
     sched_name TEXT NOT NULL,
     calendar_name  TEXT NOT NULL,
@@ -120,14 +120,14 @@ CREATE TABLE scheduler."qrtz_calendars"
     PRIMARY KEY (sched_name,calendar_name)
 );
 
-CREATE TABLE scheduler."qrtz_paused_trigger_grps"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_paused_trigger_grps"
 (
     sched_name TEXT NOT NULL,
     trigger_group TEXT NOT NULL,
     PRIMARY KEY (sched_name,trigger_group)
 );
 
-CREATE TABLE scheduler."qrtz_fired_triggers"
+CREATE TABLE  IF NOT EXISTS scheduler."qrtz_fired_triggers"
 (
     sched_name TEXT NOT NULL,
     entry_id TEXT NOT NULL,
@@ -145,7 +145,7 @@ CREATE TABLE scheduler."qrtz_fired_triggers"
     PRIMARY KEY (sched_name,entry_id)
 );
 
-CREATE TABLE scheduler."qrtz_scheduler_state"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_scheduler_state"
 (
     sched_name TEXT NOT NULL,
     instance_name TEXT NOT NULL,
@@ -154,21 +154,21 @@ CREATE TABLE scheduler."qrtz_scheduler_state"
     PRIMARY KEY (sched_name,instance_name)
 );
 
-CREATE TABLE scheduler."qrtz_locks"
+CREATE TABLE IF NOT EXISTS scheduler."qrtz_locks"
 (
     sched_name TEXT NOT NULL,
     lock_name  TEXT NOT NULL,
     PRIMARY KEY (sched_name,lock_name)
 );
 
-create index idx_qrtz_j_req_recovery on scheduler.qrtz_job_details(requests_recovery);
-create index idx_qrtz_t_next_fire_time on scheduler.qrtz_triggers(next_fire_time);
-create index idx_qrtz_t_state on scheduler.qrtz_triggers(trigger_state);
-create index idx_qrtz_t_nft_st on scheduler.qrtz_triggers(next_fire_time,trigger_state);
-create index idx_qrtz_ft_trig_name on scheduler.qrtz_fired_triggers(trigger_name);
-create index idx_qrtz_ft_trig_group on scheduler.qrtz_fired_triggers(trigger_group);
-create index idx_qrtz_ft_trig_nm_gp on scheduler.qrtz_fired_triggers(sched_name,trigger_name,trigger_group);
-create index idx_qrtz_ft_trig_inst_name on scheduler.qrtz_fired_triggers(instance_name);
-create index idx_qrtz_ft_job_name on scheduler.qrtz_fired_triggers(job_name);
-create index idx_qrtz_ft_job_group on scheduler.qrtz_fired_triggers(job_group);
-create index idx_qrtz_ft_job_req_recovery on scheduler.qrtz_fired_triggers(requests_recovery);
+create index IF NOT EXISTS idx_qrtz_j_req_recovery on scheduler.qrtz_job_details(requests_recovery);
+create index IF NOT EXISTS idx_qrtz_t_next_fire_time on scheduler.qrtz_triggers(next_fire_time);
+create index IF NOT EXISTS idx_qrtz_t_state on scheduler.qrtz_triggers(trigger_state);
+create index IF NOT EXISTS idx_qrtz_t_nft_st on scheduler.qrtz_triggers(next_fire_time,trigger_state);
+create index IF NOT EXISTS idx_qrtz_ft_trig_name on scheduler.qrtz_fired_triggers(trigger_name);
+create index IF NOT EXISTS idx_qrtz_ft_trig_group on scheduler.qrtz_fired_triggers(trigger_group);
+create index IF NOT EXISTS idx_qrtz_ft_trig_nm_gp on scheduler.qrtz_fired_triggers(sched_name,trigger_name,trigger_group);
+create index IF NOT EXISTS idx_qrtz_ft_trig_inst_name on scheduler.qrtz_fired_triggers(instance_name);
+create index IF NOT EXISTS idx_qrtz_ft_job_name on scheduler.qrtz_fired_triggers(job_name);
+create index IF NOT EXISTS idx_qrtz_ft_job_group on scheduler.qrtz_fired_triggers(job_group);
+create index IF NOT EXISTS idx_qrtz_ft_job_req_recovery on scheduler.qrtz_fired_triggers(requests_recovery);

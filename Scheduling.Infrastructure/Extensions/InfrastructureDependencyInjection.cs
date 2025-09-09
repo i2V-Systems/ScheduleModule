@@ -5,11 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
+using Pgvector.EntityFrameworkCore;
+using Serilog;
 
 namespace Infrastructure.Extensions;
 
 public static class InfrastructureDependencyInjection
 {
+    private static NpgsqlConnection connection;
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services, 
         IConfiguration configuration)
@@ -26,14 +30,59 @@ public static class InfrastructureDependencyInjection
         {
             options.UseNpgsql(
                     configuration.GetConnectionString("analytic"),
-                    b => b.MigrationsAssembly("DataLayer"))
+                    b =>
+                    {
+                        b.MigrationsAssembly("DataLayer");
+                        b.UseVector();
+                    })
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .EnableSensitiveDataLogging();
         }, ServiceLifetime.Scoped);
+
+        scheduleDbInitialise("scheduleScripts.sql", configuration);
+        scheduleDbInitialise("quartz.sql", configuration);
+      
         
         // Register open generic - this works for any T
         services.AddTransient(typeof(IScheduleRepository<>), typeof(ScheduleRepository<>));
      
         return services;
     }
+
+    private static void scheduleDbInitialise(String scriptPath, IConfiguration configuration)
+    {
+        try
+        {
+            var completePath = "";
+            var baseDir = Directory.GetParent(Directory.GetCurrentDirectory());
+
+            completePath = Path.Combine(
+                baseDir.ToString(),
+                "ScheduleModule",
+                "Scheduling.Infrastructure",
+                "Data",
+                scriptPath
+            );
+
+            string script = File.ReadAllText(completePath);
+            using (connection = new NpgsqlConnection(configuration.GetConnectionString("analytic")))
+            {
+                connection.Open();
+                using (var command = new NpgsqlCommand(script, connection))
+                {
+                    command.ExecuteNonQuery();
+                    Log.Information("schedule db initialized successfully.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Error in schedule Db Initialise:{0}", ex.Message);
+        }
+        finally
+        {
+            connection.Close();
+        }
+    }
+    
 }
