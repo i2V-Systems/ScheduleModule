@@ -53,18 +53,19 @@ public static class InfrastructureDependencyInjection
     {
         try
         {
-            var completePath = "";
-            var baseDir = Directory.GetParent(Directory.GetCurrentDirectory());
-
-            completePath = Path.Combine(
-                baseDir.ToString(),
-                "ScheduleModule",
-                "Scheduling.Infrastructure",
-                "Data",
-                scriptPath
-            );
-
-            string script = File.ReadAllText(completePath);
+            var path = "";
+#if DEBUG
+               path = System.IO.Path.Combine(
+                        System.IO.Directory.GetCurrentDirectory(),
+                        "../ScheduleModule/Scheduling.Infrastructure",
+                        "ScheduleScripts",
+                        scriptPath  
+                    );
+#else
+            path = System.IO.Path.Combine("./ScheduleScripts", scriptPath);
+#endif
+                      
+            string script = File.ReadAllText(path);
             using (connection = new NpgsqlConnection(configuration.GetConnectionString("analytic")))
             {
                 connection.Open();
