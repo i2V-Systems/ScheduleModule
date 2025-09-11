@@ -20,22 +20,22 @@ namespace Infrastructure.Schedule
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.Type)
-                .HasConversion(
-                    new EnumToStringConverter<ScheduleType>()
-                );
+            // modelBuilder.Entity<Domain.Schedule.Schedule>()
+            //     .Property(e => e.Type)
+            //     .HasConversion(
+            //         new EnumToStringConverter<ScheduleType>()
+            //     );
 
             // Configure the SubType property to convert Enum_ScheduleSubType? to string in the database
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.SubType)
-                .HasConversion(
-                    new EnumToStringConverter<ScheduleSubType>()
-                );
+            // modelBuilder.Entity<Domain.Schedule.Schedule>()
+            //     .Property(e => e.SubType)
+            //     .HasConversion(
+            //         new EnumToStringConverter<ScheduleSubType>()
+            //     );
             
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.Status)
-                .HasConversion(new EnumToStringConverter<ScheduleStatus>());
+            // modelBuilder.Entity<Domain.Schedule.Schedule>()
+            //     .Property(e => e.Status)
+            //     .HasConversion(new EnumToStringConverter<ScheduleStatus>());
             
             modelBuilder.Entity<Domain.Schedule.Schedule>()
                 .Property(e => e.StartDays)
