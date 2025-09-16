@@ -130,6 +130,7 @@ internal class ResourceManager : IResourceManager
             }
             catch (Exception ex)
             {
+                
                 Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
             }
         }
@@ -201,7 +202,7 @@ internal class ResourceManager : IResourceManager
                 {
                     await crudService.DeleteResourceMappingAsync(id);
                     List<Guid>mappingIds=  ScheduleResourcesMap
-                        .Where(s => s.Value.ScheduleId == scheduleAllDetails.schedules.Id)
+                        .Where(s => s.Key == id)
                         .Select(t => t.Key).ToList();
                     foreach (var mapId in mappingIds)
                     {

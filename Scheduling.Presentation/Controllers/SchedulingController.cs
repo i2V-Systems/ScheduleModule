@@ -310,7 +310,7 @@ namespace Presentation.Controllers
 
 
         [HttpPut("removeMultipleAttachedResource")]
-        public async Task<IActionResult> DetachMultipleSchedule([FromBody] DetachScheduleRequest data)
+        public async Task<IActionResult> DetachMultipleScheduleResource([FromBody] DetachScheduleRequest data)
         {
             try
             {

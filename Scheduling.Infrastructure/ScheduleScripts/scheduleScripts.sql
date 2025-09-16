@@ -26,17 +26,21 @@ CREATE TABLE  IF NOT EXISTS  public."ScheduleResourceMapping" (
     "metaData" text NULL,
     FOREIGN KEY ("ScheduleId") REFERENCES public."Schedule"("Id") ON DELETE CASCADE
 );
+ALTER TABLE public."ScheduleResourceMapping"
+DROP CONSTRAINT if exists uk_schedule_resource_type;
 
 DO $$
+
+     
 BEGIN
     IF NOT EXISTS (
         SELECT 1
         FROM pg_constraint
-        WHERE conname = 'uk_schedule_resource_type'
+        WHERE conname = 'uk_schedule_resource'
     ) THEN
 ALTER TABLE public."ScheduleResourceMapping"
-    ADD CONSTRAINT uk_schedule_resource_type
-        UNIQUE ("ScheduleId", "ResourceId", "ResourceType");
+    ADD CONSTRAINT uk_schedule_resource
+        UNIQUE ("Id");
 END IF;
 END$$;
 

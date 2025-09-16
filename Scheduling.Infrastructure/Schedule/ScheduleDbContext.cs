@@ -49,7 +49,7 @@ namespace Infrastructure.Schedule
             
             modelBuilder
                 .Entity<ScheduleResourceMapping>()
-                .HasKey(pvs => new { pvs.ScheduleId, pvs.ResourceId });
+                .HasKey(pvs =>   pvs.Id);
 
             base.OnModelCreating(modelBuilder);
         }
