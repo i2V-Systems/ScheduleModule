@@ -22,12 +22,12 @@ public class Schedule : BaseEntity
     // Property to store StartDateTime in UTC and retrieve in local time
     public DateTime StartDateTime
     {
-        get => _startDateTime.ToLocalTime();
+        get => _startDateTime;
         set => _startDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
     }
     public DateTime? EndDateTime
     {
-        get => _endDateTime?.ToLocalTime();
+        get => _endDateTime;
         set
         {
             if (value.HasValue)

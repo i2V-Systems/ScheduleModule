@@ -33,10 +33,12 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
         {
             return await ScheduleJobsAsync(topics, metadata, trigger =>
                     trigger.WithDailyTimeIntervalSchedule(s => s
+                    
                         .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
                         .OnEveryDay()
                         .WithIntervalInHours(24)
-                        .WithMisfireHandlingInstructionIgnoreMisfires()
+                        .WithMisfireHandlingInstructionDoNothing()
+                       
                     )
                     , cancellationToken);
         }
@@ -75,14 +77,16 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
             };
 
             var job = JobBuilder.Create<TopicDispatcherJob>()
-                .WithIdentity(jobKey)
+                .WithIdentity(jobKey,"DEFAULT")
                 .RequestRecovery(true) // Enable recovery
                 .StoreDurably(true)   // Keep job even if no triggers
                 .SetJobData(jobData)
                 .Build();
             
             // Configure the trigger
-            var triggerBuilder = TriggerBuilder.Create().WithIdentity(triggerKey);
+            var triggerBuilder = TriggerBuilder.Create()
+                .WithIdentity(triggerKey, "DEFAULT")  // ← ADD GROUP HERE
+                .ForJob(jobKey, "DEFAULT"); // ← SPECIFY JOB GROUP
             var trigger = configureTrigger(triggerBuilder).Build();
 
             await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -114,12 +118,13 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
                 var job = CreateJob(jobKey, metadata);
                 var trigger = TriggerBuilder.Create()
-                    .WithIdentity(triggerKey)
+                    .WithIdentity(triggerKey, "DEFAULT")  // ← ADD GROUP HERE
+                    .ForJob(jobKey, "DEFAULT")
                     .WithDailyTimeIntervalSchedule(s => s
                         .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
                         .OnMondayThroughFriday()
                         .WithIntervalInHours(24)
-                        .WithMisfireHandlingInstructionIgnoreMisfires())
+                        .WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -149,12 +154,13 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
                 var job = CreateJob(jobKey, metadata);
                 var trigger = TriggerBuilder.Create()
-                    .WithIdentity(triggerKey)
+                    .WithIdentity(triggerKey,"DEFAULT")
+                    .ForJob(jobKey, "DEFAULT")
                     .WithDailyTimeIntervalSchedule(s => s
                         .StartingDailyAt(TimeOfDay.HourAndMinuteOfDay(time.Hour, time.Minute))
                         .OnSaturdayAndSunday()
                         .WithIntervalInHours(24)
-                        .WithMisfireHandlingInstructionIgnoreMisfires())
+                        .WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -200,9 +206,10 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
                 var job = CreateJob(jobKey, metadata);
                 var trigger = TriggerBuilder.Create()
-                    .WithIdentity(triggerKey)
+                    .WithIdentity(triggerKey,"DEFAULT")
+                    .ForJob(jobKey, "DEFAULT")
                     .WithCronSchedule(cronExpression, x=>
-                            x.WithMisfireHandlingInstructionIgnoreMisfires())
+                            x.WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -232,11 +239,12 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
                 var job = CreateJob(jobKey, metadata);
                 var trigger = TriggerBuilder.Create()
-                    .WithIdentity(triggerKey)
+                    .WithIdentity(triggerKey, "DEFAULT")
+                    .ForJob(jobKey, "DEFAULT")
                     .StartAt(executeAt)
                     .WithSimpleSchedule(x=>x
                         .WithRepeatCount(0)
-                        .WithMisfireHandlingInstructionIgnoreMisfires())
+                        .WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -285,7 +293,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
     private static IJobDetail CreateJob(string jobKey, ScheduleEventTrigger metadata)
     {
         return JobBuilder.Create<TopicDispatcherJob>()
-            .WithIdentity(jobKey)
+            .WithIdentity(jobKey, "DEFAULT")
             .RequestRecovery(true) // Enable recovery
             .StoreDurably(true)   // Keep job even if no triggers
             .UsingJobData("scheduleId", metadata.scheduleId)

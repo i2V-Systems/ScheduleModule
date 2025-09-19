@@ -50,11 +50,11 @@ public static class SchedulerServiceExtensions
                     dataSourceName: "schedulers");
                 s.UseNewtonsoftJsonSerializer();
                 s.PerformSchemaValidation = false;
-                s.UseClustering(c =>
-                {
-                    c.CheckinInterval = TimeSpan.FromSeconds(20);
-                    c.CheckinMisfireThreshold = TimeSpan.FromSeconds(30);
-                });
+                // s.UseClustering(c =>
+                // {
+                //     c.CheckinInterval = TimeSpan.FromSeconds(20);
+                //     c.CheckinMisfireThreshold = TimeSpan.FromSeconds(30);
+                // });
             });
             // Set misfire threshold
             q.MisfireThreshold=TimeSpan.FromSeconds(30);

@@ -1,17 +1,17 @@
 create schema IF NOT EXISTS scheduler;
 set client_min_messages = WARNING;
 
-DROP TABLE IF EXISTS scheduler."qrtz_fired_triggers";
-DROP TABLE IF EXISTS scheduler."qrtz_paused_trigger_grps";
-DROP TABLE IF EXISTS scheduler."qrtz_scheduler_state";
-DROP TABLE IF EXISTS scheduler."qrtz_locks";
-DROP TABLE IF EXISTS scheduler."qrtz_simprop_triggers";
-DROP TABLE IF EXISTS scheduler."qrtz_simple_triggers";
-DROP TABLE IF EXISTS scheduler."qrtz_cron_triggers";
-DROP TABLE IF EXISTS scheduler."qrtz_blob_triggers";
-DROP TABLE IF EXISTS scheduler."qrtz_triggers";
-DROP TABLE IF EXISTS scheduler."qrtz_job_details";
-DROP TABLE IF EXISTS scheduler."qrtz_calendars";
+-- DROP TABLE IF EXISTS scheduler."qrtz_fired_triggers";
+-- DROP TABLE IF EXISTS scheduler."qrtz_paused_trigger_grps";
+-- DROP TABLE IF EXISTS scheduler."qrtz_scheduler_state";
+-- DROP TABLE IF EXISTS scheduler."qrtz_locks";
+-- DROP TABLE IF EXISTS scheduler."qrtz_simprop_triggers";
+-- DROP TABLE IF EXISTS scheduler."qrtz_simple_triggers";
+-- DROP TABLE IF EXISTS scheduler."qrtz_cron_triggers";
+-- DROP TABLE IF EXISTS scheduler."qrtz_blob_triggers";
+-- DROP TABLE IF EXISTS scheduler."qrtz_triggers";
+-- DROP TABLE IF EXISTS scheduler."qrtz_job_details";
+-- DROP TABLE IF EXISTS scheduler."qrtz_calendars";
 set client_min_messages = NOTICE;
 
 
