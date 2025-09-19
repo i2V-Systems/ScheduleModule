@@ -243,8 +243,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                     .ForJob(jobKey, "DEFAULT")
                     .StartAt(executeAt)
                     .WithSimpleSchedule(x=>x
-                        .WithRepeatCount(0)
-                        .WithMisfireHandlingInstructionDoNothing())
+                        .WithRepeatCount(0))
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
