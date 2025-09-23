@@ -14,8 +14,8 @@ public class Schedule : BaseEntity
     private DateTime? _endDateTime;
     public int? NoOfDays { get;  set; }
     public List<Days> StartDays { get;  set; }
-        
-    public ScheduleStatus Status { get;  set; } 
+
+    public ScheduleStatus Status { get; set; } = ScheduleStatus.Enabled;
     public DateTime? RecurringTime { get;  set; }
 
 

@@ -81,6 +81,20 @@ namespace Presentation.Controllers
             try
             {
                 HttpContext.Request.Headers.TryGetValue("userid", out StringValues userid);
+                
+                if (schedule.schedules == null || string.IsNullOrWhiteSpace(schedule.schedules.Name))
+                {
+                    return BadRequest("Schedule name is required");
+                }
+                var isNameAvailable =  _scheduleManager.IsScheduleNameAvailableAsync(schedule.schedules.Name);
+                if (!isNameAvailable)
+                {
+                    return Conflict(new { 
+                        message = "A schedule with this name already exists",
+                        field = "name",
+                        code = "DUPLICATE_NAME"
+                    });
+                }
 
                 Guid scheduleId = await _scheduleManager.CreateScheduleAsync(schedule.schedules, userid);
                 ScheduleAllDetails schedulesource = _scheduleManager.GetDetailed(scheduleId);
@@ -103,6 +117,8 @@ namespace Presentation.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        
+       
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update( [FromRoute] Guid id, [FromBody] ScheduleAllDetails schedule)
@@ -113,6 +129,15 @@ namespace Presentation.Controllers
             try
             {
                 HttpContext.Request.Headers.TryGetValue("clientId", out StringValues clientId);
+                var isNameAvailable =  _scheduleManager.IsScheduleNameAvailableAsync(schedule.schedules.Name,id);
+                if (!isNameAvailable)
+                {
+                    return Conflict(new { 
+                        message = "A schedule with this name already exists",
+                        field = "name",
+                        code = "DUPLICATE_NAME"
+                    });
+                }
                 await _scheduleManager.UpdateScheduleAsync(schedule.schedules);
                 ScheduleAllDetails updatedSchedule =   _scheduleManager.GetDetailed(schedule.schedules.Id);
                 var objectToSend = new Dictionary<string, dynamic>()
@@ -203,6 +228,28 @@ namespace Presentation.Controllers
             return Ok();
         }
 
+        [HttpPut("UpdateMultiple")]
+        public async Task<IActionResult> UpdateMultiple([FromBody] List<ScheduleAllDetails> schedulesToUpdate)
+        {
+            HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+            
+            
+            await _scheduleManager.UpdateMultipleSchedulesAsync(schedulesToUpdate);
+
+            var objectToSend = new Dictionary<string, dynamic>()
+            {
+                { "scheduleAllDetailsList", schedulesToUpdate },
+            };
+            await _scheduleManager.SendCrudDataToClientAsync(
+                CrudMethodType.Update,
+                objectToSend
+            );
+            return Ok(schedulesToUpdate);
+        }
         [HttpPost("attachSchedule")]
         public async Task<IActionResult> AttachSchedule([FromBody] ScheduleResourceDto resourceDto)
         {

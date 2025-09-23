@@ -191,6 +191,19 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
+        public async Task UpdateMultipleSchedulesAsync(IEnumerable<ScheduleAllDetails> schedules)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
+            
+            foreach (var schedule in schedules)
+            {
+               await crudService.UpdateAsync(schedule.schedules);
+               UpdateInMemory(schedule.schedules);
+               await  _scheduleEventManager.UpdateAsync(schedule.schedules);
+                
+            }
+        }
         public async Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids)
         {
             foreach (var id in ids)
@@ -205,7 +218,6 @@ namespace Application.Schedule.ScheduleObj
                 }
             }
         }
-
 
         public async Task SendCrudDataToClientAsync(CrudMethodType method, Dictionary<string, dynamic> resources,
             List<string> skipUserIds = null,
@@ -247,6 +259,21 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
+        public bool IsScheduleNameAvailableAsync(string name,Guid? id=null)
+        {
+            try
+            {
+                KeyValuePair<Guid,ScheduleDto> existingSchedule =  Schedules
+                    .FirstOrDefault(s => s.Value.Name.ToLower() == name.ToLower() &&  (id == null || s.Value.Id != id));
+        
+                return existingSchedule.Value==null;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error checking schedule name in database: {ex.Message}", ex);
+                throw;
+            }
+        }
 
         //memory functions 
         public void UpdateInMemory(ScheduleDto schedule)

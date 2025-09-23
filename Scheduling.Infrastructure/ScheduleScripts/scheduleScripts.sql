@@ -1,20 +1,35 @@
 -- Create Schedules table
 CREATE TABLE  IF NOT EXISTS public."Schedule" (
-                                   "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
-                                   "Name" text NOT NULL,
-                                   "Type" integer NOT NULL,
-                                   "SubType" integer NULL,
-                                   "StartDateTime" timestamp without time zone NOT NULL,
-                                   "EndDateTime" timestamp without time zone  NULL,
-                                   "Details" text NULL,
-                                   "NoOfDays" integer NULL,
-                                   "StartDays" text NULL,
-                                   "StartCronExp" text NULL,
-                                   "StopCronExp" text NULL,
-                                   "Status" integer NULL,
-                                   "RecurringTime" timestamp without time zone NULL,
-                                   CONSTRAINT "PK_Schedule" PRIMARY KEY ("Id")
+                                    "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                                    "Name" text NOT NULL,
+                                    "Type" integer NOT NULL,
+                                    "SubType" integer NULL,
+                                    "StartDateTime" timestamp without time zone NOT NULL,
+                                    "EndDateTime" timestamp without time zone  NULL,
+                                    "Details" text NULL,
+                                    "NoOfDays" integer NULL,
+                                    "StartDays" text NULL,
+                                    "StartCronExp" text NULL,
+                                    "StopCronExp" text NULL,
+                                    "Status" integer NULL,
+                                    "RecurringTime" timestamp without time zone NULL,
+                                    CONSTRAINT "PK_Schedule" PRIMARY KEY ("Id")
+                                   
 );
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'UK_Schedule_Name'
+          AND conrelid = 'public."Schedule"'::regclass
+    ) THEN
+ALTER TABLE public."Schedule"
+    ADD CONSTRAINT "UK_Schedule_Name" UNIQUE ("Name");
+END IF;
+END;
+$$;
 
 -- Create ScheduleResourceMapping table
 
