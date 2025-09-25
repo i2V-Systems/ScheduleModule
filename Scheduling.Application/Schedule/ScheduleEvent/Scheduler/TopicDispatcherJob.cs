@@ -28,7 +28,6 @@ public class TopicDispatcherJob : IJob
     {
         try
         {
-            
             var jobKey = context.JobDetail.Key;
             if (context.Recovering)
             {

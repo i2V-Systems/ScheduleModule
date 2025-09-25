@@ -166,7 +166,6 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnSaturdayAndSunday()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .InTimeZone(utcTimeZone)
                         .WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
@@ -204,29 +203,12 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
         try
         {
             var utcTimeZone = TimeZoneInfo.Utc;
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            var jobIds = new List<string>();
-
-            foreach (var topic in topics)
-            {
-                var jobKey = _jobKeyGenerator.GenerateJobKey(topic, metadata);
-                var triggerKey = _jobKeyGenerator.GenerateTriggerKey(topic, metadata);
-
-                var job = CreateJob(jobKey, metadata);
-                var trigger = TriggerBuilder.Create()
-                    .WithIdentity(triggerKey,"DEFAULT")
-                    .ForJob(jobKey, "DEFAULT")
-                    
-                    .WithCronSchedule(cronExpression, x=>
-                            x.InTimeZone(utcTimeZone)
-                                .WithMisfireHandlingInstructionDoNothing())
-                    .Build();
-
-                await scheduler.ScheduleJob(job, trigger, cancellationToken);
-                jobIds.Add(jobKey);
-            }
-
-            return ScheduleResult.Success(jobIds);
+            
+            return await ScheduleJobsAsync(topics, metadata, trigger =>
+                        trigger.WithCronSchedule(cronExpression, x => x
+                            .InTimeZone(utcTimeZone)
+                            .WithMisfireHandlingInstructionDoNothing())
+                    , cancellationToken);
         }
         catch (Exception ex)
         {

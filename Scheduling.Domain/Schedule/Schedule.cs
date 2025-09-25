@@ -18,6 +18,15 @@ public class Schedule : BaseEntity
     public ScheduleStatus Status { get; set; } = ScheduleStatus.Enabled;
     public DateTime? RecurringTime { get;  set; }
 
+    public DateTime GetLocalStartTime()
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(StartDateTime, TimeZoneInfo.Local);
+    }
+    
+    public DateTime? GetLocalEndTime()
+    {
+        return EndDateTime==null?TimeZoneInfo.ConvertTimeFromUtc(EndDateTime??new DateTime(), TimeZoneInfo.Local):null;
+    }
 
     // Property to store StartDateTime in UTC and retrieve in local time
     public DateTime StartDateTime
