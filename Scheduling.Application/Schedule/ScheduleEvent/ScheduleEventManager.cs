@@ -58,7 +58,7 @@ internal class ScheduleEventManager :IScheduleEventManager
             {
                 await scheduleEventService.DisableAsync(schedule.Id);
             }
-            else if (schedule.Status == ScheduleStatus.Active)
+            else if (schedule.Status == ScheduleStatus.Enabled)
             {
                 await scheduleEventService.EnableAsync(schedule.Id);
             }

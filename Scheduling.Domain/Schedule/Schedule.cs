@@ -14,20 +14,29 @@ public class Schedule : BaseEntity
     private DateTime? _endDateTime;
     public int? NoOfDays { get;  set; }
     public List<Days> StartDays { get;  set; }
-        
-    public ScheduleStatus Status { get;  set; } 
+
+    public ScheduleStatus Status { get; set; } = ScheduleStatus.Enabled;
     public DateTime? RecurringTime { get;  set; }
 
+    public DateTime GetLocalStartTime()
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(StartDateTime, TimeZoneInfo.Local);
+    }
+    
+    public DateTime? GetLocalEndTime()
+    {
+        return EndDateTime==null?TimeZoneInfo.ConvertTimeFromUtc(EndDateTime??new DateTime(), TimeZoneInfo.Local):null;
+    }
 
     // Property to store StartDateTime in UTC and retrieve in local time
     public DateTime StartDateTime
     {
-        get => _startDateTime.ToLocalTime();
+        get => _startDateTime;
         set => _startDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
     }
     public DateTime? EndDateTime
     {
-        get => _endDateTime?.ToLocalTime();
+        get => _endDateTime;
         set
         {
             if (value.HasValue)

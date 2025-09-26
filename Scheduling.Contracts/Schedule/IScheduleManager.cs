@@ -39,9 +39,11 @@ public interface IScheduleManager
         void UpdateInMemory(ScheduleDto schedule);
         void RemoveFromMemory(Guid id);
         void AddOrUpdateScheduleDetails(ScheduleAllDetails details);
+        bool IsScheduleNameAvailableAsync(string name,Guid? id=null);
     
         // Bulk operations
         Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids);
+        Task UpdateMultipleSchedulesAsync(IEnumerable<ScheduleAllDetails> schedules);
     
         // Cross-cutting concerns
         Task   SendCrudDataToClientAsync(CrudMethodType method, Dictionary<string, dynamic> resources, List<string> skipUserIds = null, List<string> targetUserIds = null);

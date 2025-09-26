@@ -1,20 +1,35 @@
 -- Create Schedules table
 CREATE TABLE  IF NOT EXISTS public."Schedule" (
-                                   "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
-                                   "Name" text NOT NULL,
-                                   "Type" integer NOT NULL,
-                                   "SubType" integer NULL,
-                                   "StartDateTime" timestamp without time zone NOT NULL,
-                                   "EndDateTime" timestamp without time zone  NULL,
-                                   "Details" text NULL,
-                                   "NoOfDays" integer NULL,
-                                   "StartDays" text NULL,
-                                   "StartCronExp" text NULL,
-                                   "StopCronExp" text NULL,
-                                   "Status" integer NULL,
-                                   "RecurringTime" timestamp without time zone NULL,
-                                   CONSTRAINT "PK_Schedule" PRIMARY KEY ("Id")
+                                    "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+                                    "Name" text NOT NULL,
+                                    "Type" integer NOT NULL,
+                                    "SubType" integer NULL,
+                                    "StartDateTime" timestamp without time zone NOT NULL,
+                                    "EndDateTime" timestamp without time zone  NULL,
+                                    "Details" text NULL,
+                                    "NoOfDays" integer NULL,
+                                    "StartDays" text NULL,
+                                    "StartCronExp" text NULL,
+                                    "StopCronExp" text NULL,
+                                    "Status" integer NULL,
+                                    "RecurringTime" timestamp without time zone NULL,
+                                    CONSTRAINT "PK_Schedule" PRIMARY KEY ("Id")
+                                   
 );
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'UK_Schedule_Name'
+          AND conrelid = 'public."Schedule"'::regclass
+    ) THEN
+ALTER TABLE public."Schedule"
+    ADD CONSTRAINT "UK_Schedule_Name" UNIQUE ("Name");
+END IF;
+END;
+$$;
 
 -- Create ScheduleResourceMapping table
 
@@ -56,9 +71,23 @@ ALTER TABLE public."AspNetRoleClaims"
 END IF;
 END$$;
 
-INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'ShowScheduleTab')
-    ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
-INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'AddSchedule')
-    ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
-INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'DeleteSchedule')
-    ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
+DO $$
+DECLARE
+    admin_role_id UUID;
+BEGIN
+    -- Get the Administrator role ID
+    SELECT "Id" INTO admin_role_id 
+    FROM public."AspNetRoles" 
+    WHERE "NormalizedName" = 'ADMINISTRATOR';
+    
+    IF admin_role_id IS NOT NULL THEN
+        -- Insert claims for Administrator role
+        INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") 
+        VALUES 
+            (admin_role_id, 'Rights', 'ShowScheduleTab'),
+            (admin_role_id, 'Rights', 'AddSchedule'),
+            (admin_role_id, 'Rights', 'DeleteSchedule')
+        ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
+    END IF;
+END$$;
+
