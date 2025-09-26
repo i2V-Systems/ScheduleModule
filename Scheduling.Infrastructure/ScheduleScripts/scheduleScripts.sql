@@ -71,9 +71,23 @@ ALTER TABLE public."AspNetRoleClaims"
 END IF;
 END$$;
 
-INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'ShowScheduleTab')
-    ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
-INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'AddSchedule')
-    ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
-INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") VALUES ('b8270000-2700-0a00-cea0-08dc006fdea8', 'Rights', 'DeleteSchedule')
-    ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
+DO $$
+DECLARE
+    admin_role_id UUID;
+BEGIN
+    -- Get the Administrator role ID
+    SELECT "Id" INTO admin_role_id 
+    FROM public."AspNetRoles" 
+    WHERE "NormalizedName" = 'ADMINISTRATOR';
+    
+    IF admin_role_id IS NOT NULL THEN
+        -- Insert claims for Administrator role
+        INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") 
+        VALUES 
+            (admin_role_id, 'Rights', 'ShowScheduleTab'),
+            (admin_role_id, 'Rights', 'AddSchedule'),
+            (admin_role_id, 'Rights', 'DeleteSchedule')
+        ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
+    END IF;
+END$$;
+
