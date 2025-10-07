@@ -7,17 +7,17 @@ namespace Application.Schedule;
 public interface IScheduleRepository <T>
     where T : class, new()
 {
-    void Add(T entity);
+    void Add(T entity, Guid userId);
         void DetachEntity(T entity);
-        Task AddAsync(T entity);
-        Task AddRange(List<T> entities);
+        Task AddAsync(T entity, Guid userId);
+        Task AddRange(List<T> entities, Guid userId);
         int Count();
         Task<int> CountAsync();
 
         int CountWhere(Expression<Func<T, bool>> predicate);
-        void Delete(T entity);
-        void DeleteRange(List<T> entities);
-        List<T> DeleteWhere(Expression<Func<T, bool>> predicate);
+        void Delete(T entity, Guid userId);
+        void DeleteRange(List<T> entities, Guid userId);
+        List<T> DeleteWhere(Expression<Func<T, bool>> predicate, Guid userId);
 
         T Get(Guid id);
         Task<T> GetAsync(Guid id);
@@ -57,8 +57,8 @@ public interface IScheduleRepository <T>
             Expression<Func<T, bool>> match,
             List<Expression<Func<T, object>>> includeProperties
         );
-        void Update(T entity);
-        void UpdateRange(List<T> entities);
+        void Update(T entity, Guid userId);
+        void UpdateRange(List<T> entities, Guid userId);
 
         void Dispose();
 
