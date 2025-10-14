@@ -1,5 +1,6 @@
 using System.Reflection;
 using Application.Extensions;
+using AutoMapper;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,10 +34,10 @@ public static class ScheduleModuleRegistration
         await ApplicationDependencyInjection.InitialiseManagers(serviceProvider);
     }
 
-    public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration)
+    public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration,MapperConfigurationExpression config)
     {
         services.AddContractServices(configuration);
-        services.AddInfrastructureServices(configuration);
+        services.AddInfrastructureServices(configuration,config);
         services.AddApplicationServices(configuration);
         
         var scheduleAssembly = Assembly.Load("Scheduling.Presentation");

@@ -16,15 +16,10 @@ public static class InfrastructureDependencyInjection
     private static NpgsqlConnection connection;
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services, 
-        IConfiguration configuration)
+        IConfiguration configuration,
+        MapperConfigurationExpression config)
     {
-        var mapperConfig = new MapperConfiguration(mc =>
-        {
-            mc.AddProfile(new MappingProfile());
-        });
-
-        IMapper mapper = mapperConfig.CreateMapper();
-        services.AddSingleton(mapper);
+        config.AddProfile(new MappingProfile());
         // Database Context
         services.AddDbContext<ScheduleDbContext>(options =>
         {
