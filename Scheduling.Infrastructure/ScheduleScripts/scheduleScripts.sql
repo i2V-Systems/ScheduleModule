@@ -14,7 +14,7 @@ CREATE TABLE  IF NOT EXISTS public."Schedule" (
                                     "Status" integer NULL,
                                     "RecurringTime" timestamp without time zone NULL,
                                     CONSTRAINT "PK_Schedule" PRIMARY KEY ("Id")
-                                   
+
 );
 
 DO $$
@@ -46,7 +46,7 @@ DROP CONSTRAINT if exists uk_schedule_resource_type;
 
 DO $$
 
-     
+
 BEGIN
     IF NOT EXISTS (
         SELECT 1
@@ -59,6 +59,7 @@ ALTER TABLE public."ScheduleResourceMapping"
 END IF;
 END$$;
 
+
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -67,27 +68,28 @@ BEGIN
         WHERE conname = 'uq_role_claim'
     ) THEN
 ALTER TABLE public."AspNetRoleClaims"
-    ADD CONSTRAINT uq_role_claim UNIQUE ("RoleId", "ClaimType", "ClaimValue");
+  ADD CONSTRAINT uq_role_claim UNIQUE ("RoleId", "ClaimType", "ClaimValue");
 END IF;
 END$$;
 
 DO $$
 DECLARE
-    admin_role_id UUID;
+admin_role_id UUID;
 BEGIN
     -- Get the Administrator role ID
-    SELECT "Id" INTO admin_role_id 
-    FROM public."AspNetRoles" 
-    WHERE "NormalizedName" = 'ADMINISTRATOR';
-    
-    IF admin_role_id IS NOT NULL THEN
+SELECT "Id" INTO admin_role_id
+FROM public."AspNetRoles"
+WHERE "NormalizedName" = 'ADMINISTRATOR';
+
+IF admin_role_id IS NOT NULL THEN
         -- Insert claims for Administrator role
-        INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue") 
-        VALUES 
+        INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue")
+        VALUES
             (admin_role_id, 'Rights', 'ShowScheduleTab'),
             (admin_role_id, 'Rights', 'AddSchedule'),
             (admin_role_id, 'Rights', 'DeleteSchedule')
         ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
-    END IF;
+END IF;
 END$$;
+
 
