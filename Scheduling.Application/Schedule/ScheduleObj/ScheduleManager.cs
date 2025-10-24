@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using CommonUtilityModule.CrudUtilities;
 using CommonUtilityModule.Manager;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts.AttachedResources;
@@ -20,12 +21,14 @@ namespace Application.Schedule.ScheduleObj
         private readonly IConfiguration _configuration;
         private readonly IResourceManager _resourceManager;
         private readonly IScheduleEventManager _scheduleEventManager;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private Guid userId;
 
         public static ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
         public static ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
 
         public ScheduleManager(IConfiguration configuration,
-            IServiceProvider serviceProvider,IResourceManager resourceManager,IScheduleEventManager scheduleEventManager
+            IServiceProvider serviceProvider,IResourceManager resourceManager,IScheduleEventManager scheduleEventManager,IHttpContextAccessor httpContextAccessor
         )
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -33,6 +36,15 @@ namespace Application.Schedule.ScheduleObj
 
             _resourceManager = resourceManager;
             _scheduleEventManager = scheduleEventManager;
+            _httpContextAccessor = httpContextAccessor;
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (
+                httpContext != null
+                && httpContext.Request.Headers.TryGetValue("Userid", out var userid)
+            )
+            {
+                userId = new Guid(userid);
+            }
              // InitializeAsync();
         }
         public async Task InitializeAsync()
@@ -122,11 +134,11 @@ namespace Application.Schedule.ScheduleObj
             return ScheduleDetailsMap.TryGetValue(id, out var schedule) ? schedule : null;
         }
 
-        public async Task<Guid> CreateScheduleAsync(ScheduleDto schedule, string userId = null)
+        public async Task<Guid> CreateScheduleAsync(ScheduleDto schedule, string UserId=null)
         {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            schedule = await crudService.AddAsync(schedule);
+            schedule = await crudService.AddAsync(schedule,userId);
             AddToMemory(schedule);
             await _scheduleEventManager.ExecuteAsync(schedule);
             return schedule.Id;
@@ -136,7 +148,7 @@ namespace Application.Schedule.ScheduleObj
         {    
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            await crudService.UpdateAsync(schedule);
+            await crudService.UpdateAsync(schedule,userId);
             UpdateInMemory(schedule);
             await  _scheduleEventManager.UpdateAsync(schedule);
         }
@@ -145,7 +157,7 @@ namespace Application.Schedule.ScheduleObj
         {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            await crudService.DeleteAsync(id);
+            await crudService.DeleteAsync(id,userId);
             RemoveFromMemory(id);
             await _scheduleEventManager.DeleteAsync(id);
             return true;
@@ -198,7 +210,7 @@ namespace Application.Schedule.ScheduleObj
             
             foreach (var schedule in schedules)
             {
-               await crudService.UpdateAsync(schedule.schedules);
+               await crudService.UpdateAsync(schedule.schedules,userId);
                UpdateInMemory(schedule.schedules);
                await  _scheduleEventManager.UpdateAsync(schedule.schedules);
                 
@@ -212,7 +224,7 @@ namespace Application.Schedule.ScheduleObj
                 {
                     using var scope = _serviceProvider.CreateScope();
                     var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-                    await crudService.DeleteAsync(id);
+                    await crudService.DeleteAsync(id,userId);
                     RemoveFromMemory(id);
                     await _scheduleEventManager.DeleteAsync(id);
                 }

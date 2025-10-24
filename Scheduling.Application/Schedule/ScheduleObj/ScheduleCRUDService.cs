@@ -63,14 +63,14 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto, string userName = "")
+        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto,Guid userId, string userName = "")
         {
             try
             {
                 _logger.LogInformation("Creating schedule {ScheduleName} by {UserName}", dto.Name, userName);
 
                 var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
-                await _schedulesRepository.AddAsync(schedule);
+                await _schedulesRepository.AddAsync(schedule,userId);
 
                 _logger.LogInformation("Schedule created with ID {ScheduleId}", schedule.Id);
                 dto= _mapper.Map<ScheduleDto>(schedule);
@@ -83,7 +83,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
         
-        public async Task DeleteAsync(Guid entityId, string userName = "")
+        public async Task DeleteAsync(Guid entityId,Guid userId, string userName = "")
         {
                try
             {
@@ -93,7 +93,7 @@ namespace Application.Schedule.ScheduleObj
                 if (entity == null)
                     throw new NotFoundException($"Schedule with ID {entityId} not found");
 
-                _schedulesRepository.Delete(entity);
+                _schedulesRepository.Delete(entity,userId);
 
                 _logger.LogInformation("Schedule {ScheduleId} deleted successfully", entityId);
             }
@@ -104,7 +104,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task UpdateAsync(ScheduleDto dto, string userName = "")
+        public async Task UpdateAsync(ScheduleDto dto,Guid userId, string userName = "")
         {
             try
             {
@@ -115,7 +115,7 @@ namespace Application.Schedule.ScheduleObj
 
                 // Update domain entity from DTO
                 var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
-                _schedulesRepository.Update(schedule);
+                _schedulesRepository.Update(schedule,userId);
 
                 _logger.LogInformation("Schedule {ScheduleId} updated successfully", dto.Id);
             }

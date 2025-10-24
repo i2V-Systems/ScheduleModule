@@ -21,12 +21,12 @@ public class ResourceMappingService :IScheduleResourceService
         _mapper = mapper;
     }
     
-    public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto)
+    public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto,Guid userId)
     {
         try
         {
             var resource = _mapper.Map<Domain.AttachedResources.ScheduleResourceMapping>(dto);
-            await _resourceRepository.AddAsync(resource);
+            await _resourceRepository.AddAsync(resource,userId);
             
             _logger.LogInformation("mapping created with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
@@ -38,12 +38,12 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
-    public  async Task<ScheduleResourceDto> UpdateResourceMappingAsync(ScheduleResourceDto dto)
+    public  async Task<ScheduleResourceDto> UpdateResourceMappingAsync(ScheduleResourceDto dto,Guid userId)
     {
         try
         {
             var resource = _mapper.Map<ScheduleResourceMapping>(dto);
-            _resourceRepository.Update(resource);
+            _resourceRepository.Update(resource,userId);
             
             _logger.LogInformation("mapping updated with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
@@ -69,14 +69,14 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
-    public async Task DeleteResourceMappingAsync(Guid mappingId)
+    public async Task DeleteResourceMappingAsync(Guid mappingId,Guid userId)
     {
         try
         {
             var entity = await _resourceRepository.GetAsync(mappingId);
             if (entity != null)
             {
-                _resourceRepository.Delete(entity);
+                _resourceRepository.Delete(entity,userId);
             }
         }
         catch (Exception ex)
