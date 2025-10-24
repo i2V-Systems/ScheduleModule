@@ -1,5 +1,6 @@
 using System.Reflection;
 using Application.Extensions;
+using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,7 @@ public static class ScheduleModuleRegistration
 {
     private static IServiceProvider ServiceProvider;
     public static SchedulerType CurrentSchedulerType { get; private set; }
-    
+
     public static IServiceCollection AddSchedulingModule(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -33,12 +34,19 @@ public static class ScheduleModuleRegistration
         await ApplicationDependencyInjection.InitialiseManagers(serviceProvider);
     }
 
+  public static void StartSeedingData(IConfiguration configuration)
+  {
+    ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", configuration);
+    ScheduleDbInitialise.scheduleDbInitialise("quartz.sql", configuration);
+
+  }
+
     public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddContractServices(configuration);
         services.AddInfrastructureServices(configuration);
         services.AddApplicationServices(configuration);
-        
+
         var scheduleAssembly = Assembly.Load("Scheduling.Presentation");
         var businessAssembly = Assembly.Load("BusinessLayer");
 
@@ -61,14 +69,14 @@ public static class ScheduleModuleRegistration
         services.AddControllers()
             .AddApplicationPart(scheduleAssembly)
             .AddControllersAsServices();
-       
+
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssemblies(scheduleAssembly)
         );
     }
 
 
-    
+
 }
 
 public static class ServiceRegistrationExtensions
