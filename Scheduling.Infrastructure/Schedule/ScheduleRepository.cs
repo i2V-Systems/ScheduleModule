@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using Application.Schedule;
 using CommonUtilityModule.Models;
+using LoggingModule.Enums;
+using LoggingModule.Managers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Scheduling.Contracts;
@@ -25,14 +27,27 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     /// For Adding an entry to the table after this Call Commit
     /// </summary>
     /// <param name="entity"></param>
-    public virtual void Add(T entity)
+    public virtual void Add(T entity,Guid userId)
     {
         lock (thisLock)
         {
-            EntityEntry dbEntityEntry = _context.Entry<T>(entity);
-            _context.Set<T>().Add(entity);
-            _context.SaveChanges();
-            this.DetachEntity(entity);
+            try{
+                EntityEntry dbEntityEntry = _context.Entry<T>(entity);
+                _context.Set<T>().Add(entity);
+                _context.SaveChanges();
+                this.DetachEntity(entity);
+                String tablename = GetTableNameByEntityType(entity);
+                LoggingManager.NotifyLogger<T>(
+                    entity.Id,
+                    tablename,
+                    UserActivityTypeEnum.Post,
+                    userId
+                );
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Add);
+            }
         }
     }
 
@@ -41,26 +56,53 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     /// </summary>
     /// <param name="entity"></param>
     /// <returns></returns>
-    public async virtual System.Threading.Tasks.Task AddAsync(T entity)
+    public async virtual System.Threading.Tasks.Task AddAsync(T entity,Guid userId)
     {
         lock (thisLock)
         {
-            EntityEntry dbEntityEntry = _context.Entry<T>(entity);
-            var result = _context.Set<T>().AddAsync(entity).Result;
-            _context.SaveChanges();
-            this.DetachEntity(entity);
+            try{
+                EntityEntry dbEntityEntry = _context.Entry<T>(entity);
+                var result = _context.Set<T>().AddAsync(entity).Result;
+                _context.SaveChanges();
+                this.DetachEntity(entity);
+                String tablename = GetTableNameByEntityType(entity);
+                LoggingManager.NotifyLogger<T>(
+                    entity.Id,
+                    tablename,
+                    UserActivityTypeEnum.Post,
+                    userId
+                );
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Add);
+            }
         }
     }
 
-    public virtual async Task AddRange(List<T> entities)
+    public virtual async Task AddRange(List<T> entities,Guid userId)
     {
         lock (thisLock)
         {
-            _context.Set<T>().AddRangeAsync(entities).Wait();
-            _context.SaveChanges();
-            foreach (var entity in entities)
+            try
             {
-                this.DetachEntity(entity);
+                _context.Set<T>().AddRangeAsync(entities).Wait();
+                _context.SaveChanges();
+                foreach (var entity in entities)
+                {
+                    this.DetachEntity(entity);
+                    String tablename = GetTableNameByEntityType(entity);
+                    LoggingManager.NotifyLogger<T>(
+                        entity.Id,
+                        tablename,
+                        UserActivityTypeEnum.Post,
+                        userId
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Add);
             }
         }
     }
@@ -101,21 +143,50 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     /// Delete this entry from the database call commit after this
     /// </summary>
     /// <param name="entity"></param>
-    public virtual void Delete(T entity)
+    public virtual void Delete(T entity, Guid userId)
     {
         lock (thisLock)
         {
+            String tablename = GetTableNameByEntityType(entity);
+            IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
+                tablename,
+                entity.Id.ToString()
+            );
             _context.Remove<T>(entity);
             _context.SaveChanges();
+            //user_logging
+
+            LoggingManager.NotifyLogger<T>(
+                entity.Id,
+                tablename,
+                UserActivityTypeEnum.Delete,
+                userId,
+                prevEntity
+            );
         }
     }
 
-    public virtual void DeleteRange(List<T> entities)
+    public virtual void DeleteRange(List<T> entities, Guid userId)
     {
         lock (thisLock)
         {
             _context.Set<T>().RemoveRange(entities);
             _context.SaveChanges();
+            foreach (var entity in entities)
+            {
+                String tablename = GetTableNameByEntityType(entity);
+                IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
+                    tablename,
+                    entity.Id.ToString()
+                );
+                LoggingManager.NotifyLogger<T>(
+                    entity.Id,
+                    tablename,
+                    UserActivityTypeEnum.Delete,
+                    userId,
+                    prevEntity
+                );
+            }
         }
     }
 
@@ -124,7 +195,7 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     /// </summary>
     /// <param name="predicate"></param>
     /// <returns></returns>
-    public virtual List<T> DeleteWhere(Expression<Func<T, bool>> predicate)
+    public virtual List<T> DeleteWhere(Expression<Func<T, bool>> predicate, Guid userId)
     {
         lock (thisLock)
         {
@@ -409,13 +480,34 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     /// Update entity
     /// </summary>
     /// <param name="entity"></param>
-    public virtual void Update(T entity)
+    public virtual void Update(T entity, Guid userId)
     {
         lock (thisLock)
         {
-            _context.Set<T>().Update(entity);
-            _context.SaveChanges();
-            this.DetachEntity(entity);
+            try{
+                String tablename = GetTableNameByEntityType(entity);
+                IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
+                    tablename,
+                    entity.Id.ToString()
+                );
+                _context.Set<T>().Update(entity);
+                _context.SaveChanges();
+                this.DetachEntity(entity);
+                this.DetachEntity(entity);
+
+                // Log the update
+                LoggingManager.NotifyLogger<T>(
+                    entity.Id,
+                    tablename,
+                    UserActivityTypeEnum.Put,
+                    userId,
+                    prevEntity
+                );
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Update);
+            }
         }
     }
 
@@ -423,14 +515,38 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     /// Update multiple enteries
     /// </summary>
     /// <param name="entity"></param>
-    public virtual void UpdateRange(List<T> entities)
+    public virtual void UpdateRange(List<T> entities, Guid userId)
     {
         lock (thisLock)
         {
-            _context.Set<T>().UpdateRange(entities);
-            _context.SaveChanges();
+            try
+            {
+                _context.Set<T>().UpdateRange(entities);
+                _context.SaveChanges();
 
-            entities.ForEach(x => this.DetachEntity(x));
+                foreach (var entity in entities)
+                {
+                    this.DetachEntity(entity);
+                    String tablename = GetTableNameByEntityType(entity);
+                    IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
+                        tablename,
+                        entity.Id.ToString()
+                    );
+
+                    // Log each update
+                    LoggingManager.NotifyLogger<T>(
+                        entity.Id,
+                        tablename,
+                        UserActivityTypeEnum.Put,
+                        userId,
+                        prevEntity
+                    );
+                }
+            }
+            catch(Exception ex)
+            {
+                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Update);
+            }
         }
     }
 
@@ -487,6 +603,12 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
 
             return query.ToList();
         }
+    }
+    public string GetTableNameByEntityType(T entity)
+    {
+        var entityType = _context.Model.FindEntityType(typeof(T));
+
+        return entityType.GetTableName();
     }
 }
 
