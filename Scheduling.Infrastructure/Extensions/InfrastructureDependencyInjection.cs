@@ -15,16 +15,11 @@ public static class InfrastructureDependencyInjection
 {
 
     public static IServiceCollection AddInfrastructureServices(
-        this IServiceCollection services, 
-        IConfiguration configuration)
+        this IServiceCollection services,
+        IConfiguration configuration,
+        MapperConfigurationExpression config)
     {
-        var mapperConfig = new MapperConfiguration(mc =>
-        {
-            mc.AddProfile(new MappingProfile());
-        });
-
-        IMapper mapper = mapperConfig.CreateMapper();
-        services.AddSingleton(mapper);
+        config.AddProfile(new MappingProfile());
         // Database Context
         services.AddDbContext<ScheduleDbContext>(options =>
         {
