@@ -16,11 +16,11 @@
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="12.0.1" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.11" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.11" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.4" />
         <PackageReference Include="NETCore.MailKit" Version="2.1.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
         <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.1.2" />
 		<Content Include="ScheduleScripts\quartz.sql" CopyToPublishDirectory="Always" />
 		<Content Include="ScheduleScripts\scheduleScripts.sql" CopyToPublishDirectory="Always" />
