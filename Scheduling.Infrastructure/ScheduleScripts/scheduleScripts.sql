@@ -1,3 +1,20 @@
+-- Drop Schedule table if Type column is text
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'Schedule'
+          AND column_name = 'Type'
+          AND data_type = 'text'
+    ) THEN
+        DROP TABLE IF EXISTS public."Schedule" CASCADE;
+        RAISE NOTICE 'Schedule table dropped because Type column was text type';
+    END IF;
+END$$;
+
+
 -- Create Schedules table
 CREATE TABLE  IF NOT EXISTS public."Schedule" (
                                     "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
