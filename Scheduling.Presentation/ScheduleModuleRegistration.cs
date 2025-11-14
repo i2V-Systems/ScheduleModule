@@ -2,6 +2,8 @@ using System.Reflection;
 using Application.Extensions;
 using AutoMapper;
 using Infrastructure;
+using AutoMapper;
+using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +23,7 @@ public static class ScheduleModuleRegistration
 {
     private static IServiceProvider ServiceProvider;
     public static SchedulerType CurrentSchedulerType { get; private set; }
+
 
     public static IServiceCollection AddSchedulingModule(
         this IServiceCollection services,
@@ -46,7 +49,9 @@ public static class ScheduleModuleRegistration
     {
         services.AddContractServices(configuration);
         services.AddInfrastructureServices(configuration,config);
+        services.AddInfrastructureServices(configuration,config);
         services.AddApplicationServices(configuration);
+
 
         var scheduleAssembly = Assembly.Load("Scheduling.Presentation");
         var businessAssembly = Assembly.Load("BusinessLayer");
@@ -71,10 +76,12 @@ public static class ScheduleModuleRegistration
             .AddApplicationPart(scheduleAssembly)
             .AddControllersAsServices();
 
+
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssemblies(scheduleAssembly)
         );
     }
+
 
 
 
@@ -161,3 +168,4 @@ public static class ServiceRegistrationExtensions
         return ServiceLifetime.Transient;
     }
 }
+
