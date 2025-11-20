@@ -174,9 +174,7 @@ namespace Application.Schedule.ScheduleObj
                    await UpdateScheduleDetails(Schedules.Values);
                 }
 
-                return userName == "admin"
-                    ? ScheduleDetailsMap.Values
-                    : ImmutableList<ScheduleAllDetails>.Empty;
+                return ScheduleDetailsMap.Values;
             }
             catch (Exception ex)
             {
