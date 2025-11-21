@@ -39,8 +39,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnEveryDay()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .WithMisfireHandlingInstructionDoNothing()
-                       
+                        .WithMisfireHandlingInstructionFireAndProceed()
                     )
                     , cancellationToken);
         }
@@ -128,7 +127,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnMondayThroughFriday()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .WithMisfireHandlingInstructionDoNothing())
+                        .WithMisfireHandlingInstructionFireAndProceed())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -166,7 +165,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnSaturdayAndSunday()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .WithMisfireHandlingInstructionDoNothing())
+                        .WithMisfireHandlingInstructionFireAndProceed())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -207,7 +206,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
             return await ScheduleJobsAsync(topics, metadata, trigger =>
                         trigger.WithCronSchedule(cronExpression, x => x
                             .InTimeZone(utcTimeZone)
-                            .WithMisfireHandlingInstructionDoNothing())
+                            .WithMisfireHandlingInstructionFireAndProceed())
                     , cancellationToken);
         }
         catch (Exception ex)
