@@ -18,7 +18,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
         private readonly IScheduleValidator _validator;
         private readonly IUnifiedScheduler _scheduler;
         private readonly ILogger<ScheduleEventService> _logger;
-        
+
 
         public ScheduleEventService( IScheduleStrategyFactory strategyFactory,
             IScheduleValidator validator,
@@ -42,7 +42,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
                 var scheduleValidation = _validator.ValidateSchedule(schedule);
                 if (!scheduleValidation.IsValid)
                 {
-                    Log.Error("Schedule validation failed for schedule {ScheduleId}: {Errors}", 
+                    Log.Error("Schedule validation failed for schedule {ScheduleId}: {Errors}",
                         schedule.Id,  scheduleValidation.Errors);
                     return ScheduleResult.Failure($"Schedule  validation failed: {string.Join(", ", scheduleValidation.Errors)}");
                 }
@@ -51,7 +51,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 
                 if (result.IsSuccess)
                 {
-                    Log.Error("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}", 
+                  Log.Information("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}",
                         result.ScheduledJobIds.Count, schedule.Id);
                 }
                 return result;
@@ -61,7 +61,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
                 Log.Error(ex, "Error executing schedule {ScheduleId}", schedule.Id);
                 return ScheduleResult.Failure("An unexpected error occurred while scheduling jobs", ex);
             }
-            
+
         }
 
         public async Task<ScheduleResult> UpdateAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, CancellationToken cancellationToken = default)
@@ -74,7 +74,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
                 var scheduleValidation = _validator.ValidateSchedule(schedule);
                 if (!scheduleValidation.IsValid)
                 {
-                    Log.Error("Schedule validation failed for schedule {ScheduleId}: {Errors}", 
+                    Log.Error("Schedule validation failed for schedule {ScheduleId}: {Errors}",
                         schedule.Id,  scheduleValidation.Errors);
                     return ScheduleResult.Failure($"Schedule  validation failed: {string.Join(", ", scheduleValidation.Errors)}");
                 }
@@ -83,7 +83,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 
                 if (result.IsSuccess)
                 {
-                    Log.Error("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}", 
+                  Log.Information("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}",
                         result.ScheduledJobIds.Count, schedule.Id);
                 }
                 return result;
@@ -99,7 +99,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
         {
             try{
                 var jobKeys = await _scheduler.GetJobKeysForScheduleAsync(id, cancellationToken);
-                    
+
                 if (!jobKeys.Any())
                 {
                     Log.Warning("No jobs found for schedule {ScheduleId}", id);
@@ -107,10 +107,10 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
                 }
 
                 var success = await _scheduler.UnscheduleAllAsync(jobKeys, cancellationToken);
-                    
+
                 if (success)
                 {
-                    Log.Information("Successfully deleted {JobCount} jobs for schedule {ScheduleId}", 
+                  Log.Information("Successfully deleted {JobCount} jobs for schedule {ScheduleId}",
                         jobKeys.Count, id);
                     return ScheduleResult.Success(jobKeys.ToList());
                 }
@@ -131,7 +131,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
             try
             {
                 var success = await _scheduler.ResumeJobAsync(id, cancellationToken);
-                
+
                 if (success)
                 {
                     Log.Information("Successfully enabled schedule {ScheduleId}", id);
@@ -155,7 +155,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
             try
             {
                 var success = await _scheduler.PauseJobAsync(id, cancellationToken);
-                
+
                 if (success)
                 {
                     Log.Information("Successfully disabled schedule {ScheduleId}", id);
@@ -177,7 +177,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
         public async Task<ScheduleResult> GetScheduleStatusAsync(Guid id, CancellationToken cancellationToken = default)
         {
             try
-            { 
+            {
                 var status = await _scheduler.GetScheduleStatusAsync(id, cancellationToken);
                 if (status == ScheduleStatus.NotFound)
                 {
@@ -201,7 +201,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
         {
             return await _scheduler.IsScheduleActiveAsync(id, cancellationToken);
         }
-        
+
         public async Task<bool> ScheduleExistsAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var resList=  await _scheduler.GetJobKeysForScheduleAsync(id,cancellationToken);
