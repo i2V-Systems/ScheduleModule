@@ -68,7 +68,7 @@ namespace Application.Schedule.ScheduleObj
             {
                 Log.Error("Exception in initialised schedules");
             }
-          
+
         }
         private async Task EnsureInitializedAsync()
         {
@@ -124,7 +124,7 @@ namespace Application.Schedule.ScheduleObj
             await InitializeAsync();
         }
 
-        
+
 
         public ScheduleDto Get(Guid id) =>
             Schedules.TryGetValue(id, out var schedule) ? schedule : null;
@@ -145,7 +145,7 @@ namespace Application.Schedule.ScheduleObj
         }
 
         public async Task UpdateScheduleAsync(ScheduleDto schedule)
-        {    
+        {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
             await crudService.UpdateAsync(schedule,userId);
@@ -205,13 +205,13 @@ namespace Application.Schedule.ScheduleObj
         {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            
+
             foreach (var schedule in schedules)
             {
                await crudService.UpdateAsync(schedule.schedules,userId);
                UpdateInMemory(schedule.schedules);
                await  _scheduleEventManager.UpdateAsync(schedule.schedules);
-                
+
             }
         }
         public async Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids)
@@ -275,7 +275,7 @@ namespace Application.Schedule.ScheduleObj
             {
                 KeyValuePair<Guid,ScheduleDto> existingSchedule =  Schedules
                     .FirstOrDefault(s => s.Value.Name.ToLower() == name.ToLower() &&  (id == null || s.Value.Id != id));
-        
+
                 return existingSchedule.Value==null;
             }
             catch (Exception ex)
@@ -285,7 +285,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        //memory functions 
+        //memory functions
         public void UpdateInMemory(ScheduleDto schedule)
         {
             if (Schedules.TryGetValue(schedule.Id, out var existing))
@@ -298,7 +298,7 @@ namespace Application.Schedule.ScheduleObj
                     AttachedResources = resourceDtos ?? null
                 };
                 AddOrUpdateScheduleDetails(updatedDetails);
-                
+
             }
         }
 
@@ -315,6 +315,6 @@ namespace Application.Schedule.ScheduleObj
             Schedules.TryAdd(schedule.Id, schedule);
             AddOrUpdateScheduleDetails(new ScheduleAllDetails { schedules = schedule });
         }
-      
+
     }
 }
