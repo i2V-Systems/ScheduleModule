@@ -92,6 +92,7 @@ internal class ResourceManager : IResourceManager
         ScheduleResourcesMap.Clear();
 
         // Reload from database
+        _initialized = false;
         await InitializeAsync();
     }
 
