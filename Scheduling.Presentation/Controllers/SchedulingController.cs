@@ -19,8 +19,8 @@ namespace Presentation.Controllers
         private readonly ILogger<SchedulingController> _logger;
         private readonly IResourceManager _resourceManager;
         private readonly IScheduleManager _scheduleManager;
-        
-        public SchedulingController( 
+
+        public SchedulingController(
             ILogger<SchedulingController> logger,
             IScheduleManager scheduleManager,
             IResourceManager resourceManager)
@@ -29,18 +29,18 @@ namespace Presentation.Controllers
             _scheduleManager = scheduleManager;
             _resourceManager = resourceManager;
         }
-        
+
         [HttpGet]
         public  IEnumerable<ScheduleDto> GetAll()
         {
             IEnumerable<ScheduleDto> schedules =  _scheduleManager.GetAllCachedSchedules();
             return schedules;
         }
-        
+
         [HttpGet]
         [Route("GetAllResourceDetails")]
         public async Task<IActionResult> GetAllResourceDetails()
-        { 
+        {
             try
             {
                 HttpContext.Request.Headers.TryGetValue("Username", out StringValues UserName);
@@ -52,7 +52,7 @@ namespace Presentation.Controllers
                 return BadRequest(ex.Message.ToString());
             }
         }
-        
+
         [HttpGet("{id}")]
         public  IActionResult Get([FromRoute] Guid id)
         {
@@ -81,7 +81,7 @@ namespace Presentation.Controllers
             try
             {
                 HttpContext.Request.Headers.TryGetValue("userid", out StringValues userid);
-                
+
                 if (schedule.schedules == null || string.IsNullOrWhiteSpace(schedule.schedules.Name))
                 {
                     return BadRequest("Schedule name is required");
@@ -89,7 +89,7 @@ namespace Presentation.Controllers
                 var isNameAvailable =  _scheduleManager.IsScheduleNameAvailableAsync(schedule.schedules.Name);
                 if (!isNameAvailable)
                 {
-                    return Conflict(new { 
+                    return Conflict(new {
                         message = "A schedule with this name already exists",
                         field = "name",
                         code = "DUPLICATE_NAME"
@@ -117,8 +117,8 @@ namespace Presentation.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
-       
+
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update( [FromRoute] Guid id, [FromBody] ScheduleAllDetails schedule)
@@ -132,7 +132,7 @@ namespace Presentation.Controllers
                 var isNameAvailable =  _scheduleManager.IsScheduleNameAvailableAsync(schedule.schedules.Name,id);
                 if (!isNameAvailable)
                 {
-                    return Conflict(new { 
+                    return Conflict(new {
                         message = "A schedule with this name already exists",
                         field = "name",
                         code = "DUPLICATE_NAME"
@@ -147,7 +147,7 @@ namespace Presentation.Controllers
                         new List<ScheduleAllDetails>() { updatedSchedule }
                     },
                 };
-                
+
                 _scheduleManager.SendCrudDataToClientAsync(
                     CrudMethodType.Update,
                     objectToSend
@@ -197,7 +197,7 @@ namespace Presentation.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
         [HttpPut("DeleteMultiple")]
         public async Task<IActionResult> DeleteMultiple([FromBody] List<Guid> ScheduleToBeDeleted)
         {
@@ -214,7 +214,7 @@ namespace Presentation.Controllers
                     _scheduleManager.GetScheduleDetailsFromCache(id)
                 );
             }
-            
+
             await _scheduleManager.DeleteMultipleSchedulesAsync(ScheduleToBeDeleted);
 
             var objectToSend = new Dictionary<string, dynamic>()
@@ -236,8 +236,8 @@ namespace Presentation.Controllers
             {
                 return BadRequest();
             }
-            
-            
+
+
             await _scheduleManager.UpdateMultipleSchedulesAsync(schedulesToUpdate);
 
             var objectToSend = new Dictionary<string, dynamic>()
@@ -260,9 +260,9 @@ namespace Presentation.Controllers
                 _scheduleManager.UpdateInMemory(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
                     new List<ScheduleAllDetails?>();
-              
+
                 var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
-                var objectToSend = 
+                var objectToSend =
                     new Dictionary<string, dynamic>()
                     {
                         {
@@ -282,6 +282,24 @@ namespace Presentation.Controllers
                 throw;
             }
         }
+
+        [HttpPost("detachScheduleResourceMultiple")]
+        public async Task<IActionResult> DeleteAttachedResourcesByResourceIds([FromBody] List<DetachScheduleResourceDto> resourceDto)
+        {
+          try
+          {
+            await _resourceManager.DeleteMultipleResources(resourceDto);
+            await _resourceManager.RefreshCacheAsync();
+            await _scheduleManager.RefreshCacheAsync();
+            return Ok();
+          }
+          catch (Exception e)
+          {
+            Log.Error("error in SchedulingController DeleteAttachedResourcesByResourceIds",e.Message);
+            throw;
+          }
+        }
+
 
         // [HttpPost("AttachOrUpdateSchedules")]
         // public async Task<IActionResult> AttachOrUpdateSchedules([FromBody] ScheduleResourceDto dto)
@@ -365,7 +383,7 @@ namespace Presentation.Controllers
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
                 _scheduleManager.UpdateInMemory(schedule);
                 var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(data.Schedule.schedules.Id);
-                var objectToSend = 
+                var objectToSend =
                     new Dictionary<string, dynamic>()
                     {
                         {
@@ -385,22 +403,22 @@ namespace Presentation.Controllers
                 throw;
             }
         }
-        
+
         [HttpGet("resources")]
         public  IEnumerable<ScheduleResourceDto> GetAllResources()
         {
             IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetAllCachedResources();
             return resources;
         }
-        
-        
+
+
         [HttpGet("resources/{id}")]
         public  IEnumerable<ScheduleResourceDto> GetResourcesByScheduleId([FromRoute] Guid id)
         {
             IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetResourcesByScheduleId(id);
             return resources;
         }
-        
+
         [HttpDelete("resources/{id}")]
         public async Task<IActionResult> DeleteResources([FromRoute] Guid id)
         {
@@ -434,7 +452,7 @@ namespace Presentation.Controllers
             }
 
         }
-        
+
         [HttpPost("resources")]
         public async Task<IActionResult> CreateResource([FromBody] ScheduleResourceDto resourceDto)
         {
@@ -445,9 +463,9 @@ namespace Presentation.Controllers
                 await _scheduleManager.UpdateScheduleAsync(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
                     new List<ScheduleAllDetails?>();
-              
+
                 var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
-                var objectToSend = 
+                var objectToSend =
                     new Dictionary<string, dynamic>()
                     {
                         {
@@ -478,9 +496,9 @@ namespace Presentation.Controllers
                 _scheduleManager.UpdateInMemory(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
                     new List<ScheduleAllDetails?>();
-              
+
                 var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
-                var objectToSend = 
+                var objectToSend =
                     new Dictionary<string, dynamic>()
                     {
                         {
