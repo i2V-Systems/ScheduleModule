@@ -291,6 +291,19 @@ namespace Presentation.Controllers
             await _resourceManager.DeleteMultipleResources(resourceDto);
             await _resourceManager.RefreshCacheAsync();
             await _scheduleManager.RefreshCacheAsync();
+            var updatedSchedule= _scheduleManager.GetAllCachedSchedules();
+            var objectToSend =
+              new Dictionary<string, dynamic>()
+              {
+                {
+                  "scheduleAllDetailsList",
+                  updatedSchedule.ToList()
+                },
+              };
+            await _scheduleManager.SendCrudDataToClientAsync(
+              CrudMethodType.Update,
+              objectToSend
+            );
             return Ok();
           }
           catch (Exception e)
