@@ -62,8 +62,18 @@ ALTER TABLE public."ScheduleResourceMapping"
 DROP CONSTRAINT if exists uk_schedule_resource_type;
 
 DO $$
+BEGIN
+    IF  EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'uk_schedule_resource'
+    ) THEN
+ALTER TABLE public."ScheduleResourceMapping"
+    DROP CONSTRAINT uk_schedule_resource;
+END IF;
+END$$;
 
-
+DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1
@@ -71,11 +81,10 @@ BEGIN
         WHERE conname = 'uk_schedule_resource'
     ) THEN
 ALTER TABLE public."ScheduleResourceMapping"
-    ADD CONSTRAINT uk_schedule_resource
-        UNIQUE ("Id");
+  ADD CONSTRAINT uk_schedule_resource
+    UNIQUE ("ScheduleId", "ResourceId", "ResourceType");
 END IF;
 END$$;
-
 
 DO $$
 BEGIN
