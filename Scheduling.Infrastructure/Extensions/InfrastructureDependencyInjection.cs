@@ -36,8 +36,10 @@ public static class InfrastructureDependencyInjection
 
 
 
+        services.AddSingleton<INotificationManager, NotificationManager>();
         // Register open generic - this works for any T
         services.AddTransient(typeof(IScheduleRepository<>), typeof(ScheduleRepository<>));
+
 
         return services;
     }

@@ -229,18 +229,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task SendCrudDataToClientAsync(CrudMethodType method, Dictionary<string, dynamic> resources,
-            List<string> skipUserIds = null,
-            List<string> targetUserIds = null)
-        {
-            await CrudManager.SendCrudDataToClient(
-                CrudRelatedEntity.Schedule,
-                method,
-                resources,
-                skipUserIds,
-                targetUserIds
-            );
-        }
+
 
 
         private async Task UpdateScheduleDetails(IEnumerable<ScheduleDto> schedules)
@@ -269,7 +258,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public bool IsScheduleNameAvailableAsync(string name,Guid? id=null)
+        public bool IsScheduleNameAvailable(string name,Guid? id=null)
         {
             try
             {
@@ -316,5 +305,66 @@ namespace Application.Schedule.ScheduleObj
             AddOrUpdateScheduleDetails(new ScheduleAllDetails { schedules = schedule });
         }
 
+        public async Task<List<ScheduleAllDetails>> CreateAndUpdateResourceMapping(ScheduleResourceDto resourceMap)
+        {
+          List<ScheduleResourceDto> allResources = _resourceManager.GetAllCachedResources();
+          List<ScheduleResourceDto> existingMappings = allResources
+            .Where(x => x.ResourceId == resourceMap.ResourceId &&
+                        x.ResourceType == resourceMap.ResourceType)
+            .ToList();
+
+          // This list will hold all schedules to send to client.
+          var affectedSchedules = new List<ScheduleAllDetails>();
+          foreach (var map in existingMappings)
+          {
+            await _resourceManager.DeleteScheduleResourceMap(map.Id);
+            var deletedSchedule = GetScheduleFromCache(map.ScheduleId);
+            if (deletedSchedule != null)
+            {
+              UpdateInMemory(deletedSchedule);
+              var deletedScheduleDetails =
+                GetScheduleDetailsFromCache(map.ScheduleId);
+              if (deletedScheduleDetails != null)
+                affectedSchedules.Add(deletedScheduleDetails);
+            }
+          }
+
+          //  HANDLE ADD (if ScheduleId is valid)
+          if (resourceMap.ScheduleId != Guid.Empty)
+          {
+            await _resourceManager.AddScheduleResourceMap(resourceMap);
+            var addedSchedule =
+              GetScheduleFromCache(resourceMap.ScheduleId);
+
+            if (addedSchedule != null)
+            {
+                UpdateInMemory(addedSchedule);
+                var addedScheduleDetails =
+                GetScheduleDetailsFromCache(resourceMap.ScheduleId);
+
+              if (addedScheduleDetails != null)
+              {
+                // Prevent duplicates in case add & delete involve same schedule
+                affectedSchedules.RemoveAll(x => x.schedules.Id == addedScheduleDetails.schedules.Id);
+                affectedSchedules.Add(addedScheduleDetails);
+              }
+            }
+          }
+
+          return affectedSchedules;
+        }
+
+        public Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule)
+        {
+          var objectToSend =
+            new Dictionary<string, dynamic>()
+            {
+              {
+                "scheduleAllDetailsList",
+                updatedSchedule
+              },
+            };
+          return objectToSend;
+        }
     }
 }

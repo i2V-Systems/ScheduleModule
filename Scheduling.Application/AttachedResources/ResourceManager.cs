@@ -53,7 +53,7 @@ internal class ResourceManager : IResourceManager
             Log.Error("Exception in initialised schedules");
         }
     }
-    
+
     private async Task EnsureInitializedAsync()
     {
         if (!_initialized)
@@ -61,19 +61,19 @@ internal class ResourceManager : IResourceManager
             await InitializeAsync();
         }
     }
-    
+
      public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId)
      {
          return ScheduleResourcesMap.Values
              .Where(r => r.ScheduleId == scheduleId)
              .ToList();
      }
-        
+
      public bool IsResourceLoaded(Guid mappingId)
      {
          return ScheduleResourcesMap.ContainsKey(mappingId);
      }
-        
+
 
     public int GetLoadedResourceCount()
     {
@@ -90,13 +90,13 @@ internal class ResourceManager : IResourceManager
     {
         // Clear existing cache
         ScheduleResourcesMap.Clear();
-        
+
         // Reload from database
         await InitializeAsync();
     }
-        
-      
-        
+
+
+
         public async Task LoadScheduleResourceMapping()
         {
             try
@@ -142,7 +142,7 @@ internal class ResourceManager : IResourceManager
             }
             catch (Exception ex)
             {
-                
+
                 Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
             }
         }
@@ -168,18 +168,18 @@ internal class ResourceManager : IResourceManager
             {
                 using var scope = _serviceProvider.CreateScope();
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
-                
+
                 await crudService.DeleteResourceMappingAsync(id,userId);
-                
+
                 var mapEntry = ScheduleResourcesMap
                     .FirstOrDefault(m => m.Value.Id == id);
-                
+
                 if (mapEntry.Equals(default(KeyValuePair<Guid, ScheduleResourceDto>)))
                 {
                     Log.Warning("Resource mapping with Id {Id} not found in memory map.", id);
                     return Guid.Empty;
                 }
-                
+
                 var mapId = mapEntry.Key;
                 if (ScheduleResourcesMap.TryRemove(mapId, out var removedMap))
                 {
@@ -205,10 +205,10 @@ internal class ResourceManager : IResourceManager
 
         public async Task<ScheduleAllDetails> DeleteMultipleScheduleResourceMap(List<Guid> ids,ScheduleAllDetails scheduleAllDetails)
         {
-           
+
             try
             {
-                using var scope = _serviceProvider.CreateScope(); 
+                using var scope = _serviceProvider.CreateScope();
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
                 foreach (var id in ids)
                 {
@@ -220,13 +220,13 @@ internal class ResourceManager : IResourceManager
                     {
                         ScheduleResourcesMap.TryRemove(mapId, out var map);
                     }
-                   
+
                 }
             }
             catch (Exception ex)
             {
                 Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
-                
+
             }
             return scheduleAllDetails;
         }
