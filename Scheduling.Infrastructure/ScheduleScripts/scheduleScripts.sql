@@ -61,6 +61,7 @@ CREATE TABLE  IF NOT EXISTS  public."ScheduleResourceMapping" (
 ALTER TABLE public."ScheduleResourceMapping"
 DROP CONSTRAINT if exists uk_schedule_resource_type;
 
+
 DO $$
 BEGIN
     IF  EXISTS (
@@ -69,7 +70,7 @@ BEGIN
         WHERE conname = 'uk_schedule_resource'
     ) THEN
 ALTER TABLE public."ScheduleResourceMapping"
-    DROP CONSTRAINT uk_schedule_resource;
+DROP CONSTRAINT uk_schedule_resource;
 END IF;
 END$$;
 
@@ -81,8 +82,8 @@ BEGIN
         WHERE conname = 'uk_schedule_resource'
     ) THEN
 ALTER TABLE public."ScheduleResourceMapping"
-  ADD CONSTRAINT uk_schedule_resource
-    UNIQUE ("ScheduleId", "ResourceId", "ResourceType");
+    ADD CONSTRAINT uk_schedule_resource
+      UNIQUE ("ScheduleId", "ResourceId", "ResourceType");
 END IF;
 END$$;
 
