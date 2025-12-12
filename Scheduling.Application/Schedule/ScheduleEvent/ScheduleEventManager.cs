@@ -19,12 +19,12 @@ internal class ScheduleEventManager :IScheduleEventManager
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
     
-    private readonly  IResourceManager _resourceManager;
+    private readonly  IScheduledEntitiesManager _scheduledEntitiesManager;
     
-    public ScheduleEventManager(IServiceProvider serviceProvider,IConfiguration configuration,IResourceManager resourceManager)
+    public ScheduleEventManager(IServiceProvider serviceProvider,IConfiguration configuration,IScheduledEntitiesManager scheduledEntitiesManager)
     {
         _serviceProvider = serviceProvider;
-        _resourceManager = resourceManager;
+        _scheduledEntitiesManager = scheduledEntitiesManager;
     }
  
     
@@ -32,7 +32,7 @@ internal class ScheduleEventManager :IScheduleEventManager
     {
         using var scope = _serviceProvider.CreateScope();
         var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
-        List<Resources> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id).Select(s=>s.ResourceType).ToList();
+        List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id).Select(s=>s.ResourceType).ToList();
         await scheduleEventService.ExecuteAsync(schedule,resources);
     }
 
@@ -41,7 +41,7 @@ internal class ScheduleEventManager :IScheduleEventManager
         using var scope = _serviceProvider.CreateScope();
         var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
         
-        List<Resources> resources = _resourceManager.GetResourcesByScheduleId(schedule.Id)
+        List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id)
             .Select(s=>s.ResourceType).ToList();
         
         var scheduleExists= await scheduleEventService.ScheduleExistsAsync(schedule.Id);
@@ -77,7 +77,7 @@ internal class ScheduleEventManager :IScheduleEventManager
             var scheduleEventService = _serviceProvider.GetRequiredService<ScheduleEventService>();
             schedules.Select(item =>
             {
-                List<Resources> resources = _resourceManager.GetResourcesByScheduleId(item.Value.Id).Select(s=>s.ResourceType).ToList();
+                List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(item.Value.Id).Select(s=>s.ResourceType).ToList();
                 return scheduleEventService.ExecuteAsync(item.Value, resources);
             });
         }

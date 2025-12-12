@@ -1,6 +1,6 @@
 using CommonUtilityModule.CrudUtilities;
 
-namespace Infrastructure;
+namespace Scheduling.Contracts;
 
 public  interface INotificationManager
 {

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Pgvector.EntityFrameworkCore;
+using Scheduling.Contracts;
 using Serilog;
 
 namespace Infrastructure.Extensions;

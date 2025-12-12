@@ -20,11 +20,11 @@ public class ScheduleResourceMapping :BaseEntity
     {
     }
 
-    public ScheduleResourceMapping(Guid resId, Guid schId, Resources type, object? data)
+    public ScheduleResourceMapping(Guid resId, Guid schId, Resources type, string? data)
     {
         ScheduleId = schId;
         ResourceId = resId;
         ResourceType = type;
-        metaData = data != null ? JsonConvert.SerializeObject(data) : null;
+        metaData = data;
     }
 }

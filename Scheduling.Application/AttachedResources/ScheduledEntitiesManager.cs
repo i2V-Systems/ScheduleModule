@@ -11,7 +11,7 @@ using Scheduling.Contracts.Schedule.DTOs;
 
 namespace Application.AttachedResources;
 
-internal class ResourceManager : IResourceManager
+internal class ScheduledEntitiesManager : IScheduledEntitiesManager
 {
     private bool _initialized = false;
     private readonly IServiceProvider _serviceProvider;
@@ -21,7 +21,7 @@ internal class ResourceManager : IResourceManager
     public static ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
     public event EventHandler<ScheduleResourceDto> ScheduleResourcePublish;
 
-    public ResourceManager(IConfiguration configuration,
+    public ScheduledEntitiesManager(IConfiguration configuration,
         IServiceProvider serviceProvider,  IHttpContextAccessor httpContextAccessor
         )
     {

@@ -1,5 +1,6 @@
 using CommonUtilityModule.CrudUtilities;
 using CommonUtilityModule.Manager;
+using Scheduling.Contracts;
 
 namespace Infrastructure;
 
