@@ -28,7 +28,7 @@ public static class ApplicationDependencyInjection
      
        // Core Application Services
        services.AddTransient<IScheduleEventService,ScheduleEventService>();
-       services.AddSingleton<IResourceManager, ResourceManager>();
+       services.AddSingleton<IScheduledEntitiesManager, ScheduledEntitiesManager>();
        // services.AddHostedService<ResourceInitializationService>();
        services.AddTransient<IScheduleValidator, ScheduleValidator>();
        services.AddTransient<IScheduleStrategyFactory, ScheduleStrategyFactory>();
@@ -65,8 +65,8 @@ public static class ApplicationDependencyInjection
         {
             await manager.InitializeAsync();
         }
-        var resourcemanager = serviceProvider.GetRequiredService<IResourceManager>();
-        if (resourcemanager is ResourceManager resManager)
+        var resourcemanager = serviceProvider.GetRequiredService<IScheduledEntitiesManager>();
+        if (resourcemanager is ScheduledEntitiesManager resManager)
         {
             await resManager.InitializeAsync();
         }
