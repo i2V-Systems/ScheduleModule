@@ -38,14 +38,10 @@ public static class ApplicationDependencyInjection
        // services.AddHostedService<ScheduleInitializationService>();
        
        services.AddSchedulingScheduler(configuration);
-       
-       // Auto-register services with attributes (your current approach)
-       
-        services.AddServicesOfType<IScopedService>();
+
+       // Auto-register services with attributes
         services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();
-        services.AddServicesOfType<ITransientService>();
         services.AddServicesWithAttributeOfType<TransientServiceAttribute>();
-        services.AddServicesOfType<ISingletonService>();
         services.AddServicesWithAttributeOfType<SingletonServiceAttribute>();
 
         // MediatR
