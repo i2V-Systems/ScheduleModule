@@ -1,4 +1,5 @@
 using CommonUtilityModule.Models;
+using CommonUtilityModule.Models.BaseModels;
 using MassTransit;
 
 namespace Scheduling.Contracts;

@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using Application.Schedule;
+using CommonUtilityModule;
 using CommonUtilityModule.Models;
+using CommonUtilityModule.Models.BaseModels;
 using LoggingModule.Enums;
 using LoggingModule.Managers;
 using Microsoft.EntityFrameworkCore;
