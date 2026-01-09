@@ -1,8 +1,7 @@
 ﻿using CommonUtilityModule.CrudUtilities;
+using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
@@ -16,18 +15,17 @@ namespace Presentation.Controllers
     [ApiController]
     public  class SchedulingController : ControllerBase
     {
-        private readonly ILogger<SchedulingController> _logger;
-        private readonly IResourceManager _resourceManager;
+        private readonly IScheduledEntitiesManager _scheduledEntitiesManager;
         private readonly IScheduleManager _scheduleManager;
 
         public SchedulingController(
             ILogger<SchedulingController> logger,
             IScheduleManager scheduleManager,
-            IResourceManager resourceManager)
+            IScheduledEntitiesManager scheduledEntitiesManager
+            )
         {
-            _logger = logger;
             _scheduleManager = scheduleManager;
-            _resourceManager = resourceManager;
+            _scheduledEntitiesManager = scheduledEntitiesManager;
         }
 
         [HttpGet]
@@ -43,18 +41,18 @@ namespace Presentation.Controllers
         {
             try
             {
-                HttpContext.Request.Headers.TryGetValue("Username", out StringValues UserName);
-                return Ok(await  _scheduleManager.GetScheduleWithAllDetails(UserName));
+                HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
+                return Ok(await  _scheduleManager.GetScheduleWithAllDetails(userName!));
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message.ToString());
-                return BadRequest(ex.Message.ToString());
+                Log.Error(ex.Message);
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpGet("{id}")]
-        public  IActionResult Get([FromRoute] Guid id)
+        public  ActionResult<ScheduleDto> Get([FromRoute] Guid id)
         {
             if (!ModelState.IsValid)
             {
@@ -86,7 +84,7 @@ namespace Presentation.Controllers
                 {
                     return BadRequest("Schedule name is required");
                 }
-                var isNameAvailable =  _scheduleManager.IsScheduleNameAvailableAsync(schedule.schedules.Name);
+                var isNameAvailable =  _scheduleManager.IsScheduleNameAvailable(schedule.schedules.Name);
                 if (!isNameAvailable)
                 {
                     return Conflict(new {
@@ -96,22 +94,10 @@ namespace Presentation.Controllers
                     });
                 }
 
-                Guid scheduleId = await _scheduleManager.CreateScheduleAsync(schedule.schedules, userid);
-                ScheduleAllDetails schedulesource = _scheduleManager.GetDetailed(scheduleId);
-                var objectToSend = new Dictionary<string, dynamic>()
-                {
-                    {
-                        "scheduleAllDetailsList",
-                        new List<ScheduleAllDetails>() { schedulesource }
-                    }
-                };
-                _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Add,
-                    objectToSend
-                );
-                return Ok(schedulesource.schedules);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.CreateScheduleAsync(schedule.schedules, userid!);
+                return Ok(scheduleAllDetails.schedules);
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
                 return BadRequest(ex.Message);
@@ -128,8 +114,7 @@ namespace Presentation.Controllers
 
             try
             {
-                HttpContext.Request.Headers.TryGetValue("clientId", out StringValues clientId);
-                var isNameAvailable =  _scheduleManager.IsScheduleNameAvailableAsync(schedule.schedules.Name,id);
+                var isNameAvailable =  _scheduleManager.IsScheduleNameAvailable(schedule.schedules.Name,id);
                 if (!isNameAvailable)
                 {
                     return Conflict(new {
@@ -173,17 +158,7 @@ namespace Presentation.Controllers
             {
                 ScheduleAllDetails? scheduleWithAllDetails = _scheduleManager.GetScheduleDetailsFromCache(id);
                 await _scheduleManager.DeleteScheduleAsync(id);
-                var objectToSend = new Dictionary<string, dynamic>()
-                {
-                    {
-                        "scheduleAllDetailsList",
-                        new List<ScheduleAllDetails?>() { scheduleWithAllDetails }
-                    },
-                };
-                await _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Delete,
-                    objectToSend
-                );
+
                 return Ok(scheduleWithAllDetails);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -201,7 +176,6 @@ namespace Presentation.Controllers
         [HttpPut("DeleteMultiple")]
         public async Task<IActionResult> DeleteMultiple([FromBody] List<Guid> ScheduleToBeDeleted)
         {
-            HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
             if (!ModelState.IsValid)
             {
                 return BadRequest();
@@ -216,15 +190,6 @@ namespace Presentation.Controllers
             }
 
             await _scheduleManager.DeleteMultipleSchedulesAsync(ScheduleToBeDeleted);
-
-            var objectToSend = new Dictionary<string, dynamic>()
-            {
-                { "scheduleAllDetailsList", scheduleAllDetailsList },
-            };
-            await _scheduleManager.SendCrudDataToClientAsync(
-                CrudMethodType.Delete,
-                objectToSend
-            );
             return Ok();
         }
 
@@ -239,15 +204,6 @@ namespace Presentation.Controllers
 
 
             await _scheduleManager.UpdateMultipleSchedulesAsync(schedulesToUpdate);
-
-            var objectToSend = new Dictionary<string, dynamic>()
-            {
-                { "scheduleAllDetailsList", schedulesToUpdate },
-            };
-            await _scheduleManager.SendCrudDataToClientAsync(
-                CrudMethodType.Update,
-                objectToSend
-            );
             return Ok(schedulesToUpdate);
         }
         [HttpPost("attachSchedule")]
@@ -255,7 +211,7 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _resourceManager.AddScheduleResourceMap(resourceDto);
+                await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 _scheduleManager.UpdateInMemory(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
@@ -392,7 +348,7 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _resourceManager.DeleteMultipleScheduleResourceMap(data.Ids,data.Schedule);
+                await _scheduledEntitiesManager.DeleteMultipleScheduleResourceMap(data.Ids,data.Schedule);
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
                 _scheduleManager.UpdateInMemory(schedule);
                 var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(data.Schedule.schedules.Id);
@@ -420,7 +376,7 @@ namespace Presentation.Controllers
         [HttpGet("resources")]
         public  IEnumerable<ScheduleResourceDto> GetAllResources()
         {
-            IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetAllCachedResources();
+            IEnumerable<ScheduleResourceDto> resources =  _scheduledEntitiesManager.GetAllCachedResources();
             return resources;
         }
 
@@ -428,7 +384,7 @@ namespace Presentation.Controllers
         [HttpGet("resources/{id}")]
         public  IEnumerable<ScheduleResourceDto> GetResourcesByScheduleId([FromRoute] Guid id)
         {
-            IEnumerable<ScheduleResourceDto> resources =  _resourceManager.GetResourcesByScheduleId(id);
+            IEnumerable<ScheduleResourceDto> resources =  _scheduledEntitiesManager.GetResourcesByScheduleId(id);
             return resources;
         }
 
@@ -437,30 +393,22 @@ namespace Presentation.Controllers
         {
             try
             {
-                Guid scheduleId= await _resourceManager.DeleteScheduleResourceMap(id);
+                Guid scheduleId= await _scheduledEntitiesManager.DeleteScheduleResourceMap(id);
                 if (scheduleId == Guid.Empty)
                 {
                     return BadRequest();
                 }
                 var scheduleWithAllDetails= _scheduleManager.GetScheduleDetailsFromCache(scheduleId);
-                _scheduleManager.UpdateInMemory(scheduleWithAllDetails.schedules);
-                var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(scheduleWithAllDetails.schedules.Id);
-                var objectToSend = new Dictionary<string, dynamic>()
-                    {
-                        {
-                            "scheduleAllDetailsList",
-                            new List<ScheduleAllDetails?>() { updatedSchedule }
-                        },
-                    };
-                await _scheduleManager.SendCrudDataToClientAsync(
-                        CrudMethodType.Update,
-                        objectToSend
-                    );
+                if (scheduleWithAllDetails != null)
+                {
+                  ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(scheduleWithAllDetails.schedules);
+                }
+
                 return Ok();
             }
             catch(Exception e)
             {
-                Log.Error("error in SchedulingController [DeleteResources]",e.Message);
+                Log.Error(e.Message,"error in SchedulingController [DeleteResources]");
                 throw;
             }
 
@@ -471,7 +419,7 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _resourceManager.AddScheduleResourceMap(resourceDto);
+                await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 await _scheduleManager.UpdateScheduleAsync(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
@@ -494,7 +442,7 @@ namespace Presentation.Controllers
             }
             catch (Exception e)
             {
-                Log.Error("error in SchedulingController [CreateResource]",e.Message);
+                Log.Error(e.Message,"error in SchedulingController [CreateResource]");
                 throw;
             }
         }
@@ -504,7 +452,7 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _resourceManager.UpdateScheduleResourceMap(resourceDto);
+                await _scheduledEntitiesManager.UpdateScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 _scheduleManager.UpdateInMemory(schedule);
                 List<ScheduleAllDetails?> scheduleAllDetailsList =
@@ -527,9 +475,25 @@ namespace Presentation.Controllers
             }
             catch (Exception e)
             {
-                Log.Error("error in SchedulingController [UpdateResource]",e.Message);
+                Log.Error(e.Message,"error in SchedulingController [UpdateResource]");
                 throw;
             }
+        }
+
+        [HttpPut("resources/createAndUpdate")]
+        public async Task<IActionResult> CreateAndUpdateResource([FromBody] ScheduleResourceDto payload)
+        {
+          try
+          {
+            List<ScheduleAllDetails> affectedSchedules = await _scheduleManager.CreateAndUpdateResourceMapping(payload);
+
+            return Ok(affectedSchedules);
+          }
+          catch (Exception e)
+          {
+            Log.Error(e.Message,"error in SchedulingController [UpdateResource]");
+            throw;
+          }
         }
 
     }

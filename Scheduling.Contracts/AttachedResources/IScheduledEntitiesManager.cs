@@ -5,7 +5,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Scheduling.Contracts.AttachedResources;
 
-public interface IResourceManager
+public interface IScheduledEntitiesManager
 {
     public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId);
     public event EventHandler<ScheduleResourceDto> ScheduleResourcePublish;
@@ -24,3 +24,4 @@ public interface IResourceManager
     public Task<ScheduleAllDetails> DeleteMultipleScheduleResourceMap(List<Guid> id,ScheduleAllDetails scheduleAllDetails);
     public Task DeleteMultipleResources(List<DetachScheduleResourceDto> resources);
 }
+

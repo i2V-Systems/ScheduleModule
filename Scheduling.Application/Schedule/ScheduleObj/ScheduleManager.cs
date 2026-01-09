@@ -2,9 +2,11 @@
 using System.Collections.Immutable;
 using CommonUtilityModule.CrudUtilities;
 using CommonUtilityModule.Manager;
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Scheduling.Contracts;
 using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule;
@@ -19,23 +21,29 @@ namespace Application.Schedule.ScheduleObj
         private readonly IServiceProvider _serviceProvider;
         private bool _initialized = false;
         private readonly IConfiguration _configuration;
-        private readonly IResourceManager _resourceManager;
+        private readonly IScheduledEntitiesManager _scheduledEntitiesManager;
         private readonly IScheduleEventManager _scheduleEventManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly INotificationManager _notificationManager;
         private Guid userId;
 
         public static ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
         public static ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
 
         public ScheduleManager(IConfiguration configuration,
-            IServiceProvider serviceProvider,IResourceManager resourceManager,IScheduleEventManager scheduleEventManager,IHttpContextAccessor httpContextAccessor
+            IServiceProvider serviceProvider,
+            IScheduledEntitiesManager scheduledEntitiesManager,
+            IScheduleEventManager scheduleEventManager,
+            INotificationManager notificationManager,
+            IHttpContextAccessor httpContextAccessor
         )
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
-            _resourceManager = resourceManager;
+            _scheduledEntitiesManager = scheduledEntitiesManager;
             _scheduleEventManager = scheduleEventManager;
+            _notificationManager = notificationManager;
             _httpContextAccessor = httpContextAccessor;
             var httpContext = _httpContextAccessor.HttpContext;
             if (
@@ -92,9 +100,12 @@ namespace Application.Schedule.ScheduleObj
         }
 
 
-        public ScheduleAllDetails? GetScheduleDetailsFromCache(Guid id)
+        public ScheduleAllDetails GetScheduleDetailsFromCache(Guid id)
         {
-            return ScheduleDetailsMap.TryGetValue(id, out var details) ? details : null;
+          if (ScheduleDetailsMap.TryGetValue(id, out var details))
+            return details;
+
+          throw new KeyNotFoundException($"Schedule details not found for Id: {id}");
         }
 
 
@@ -135,33 +146,51 @@ namespace Application.Schedule.ScheduleObj
             return ScheduleDetailsMap.TryGetValue(id, out var schedule) ? schedule : null;
         }
 
-        public async Task<Guid> CreateScheduleAsync(ScheduleDto schedule, string UserId=null)
+        public async Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto scheduleDto, string UserId=null)
         {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            schedule = await crudService.AddAsync(schedule,userId);
-            AddToMemory(schedule);
-            await _scheduleEventManager.ExecuteAsync(schedule);
-            return schedule.Id;
+            scheduleDto = await crudService.AddAsync(scheduleDto,userId);
+            AddToMemory(scheduleDto);
+            await _scheduleEventManager.ExecuteAsync(scheduleDto);
+            ScheduleAllDetails scheduleAllDetails =  GetDetailed(scheduleDto.Id);
+            await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() {scheduleAllDetails},CrudMethodType.Add);
+
+            return scheduleAllDetails;
         }
 
-        public async Task UpdateScheduleAsync(ScheduleDto schedule)
+        private async Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,CrudMethodType methodType)
+        {
+          var objectToSend = GetAllDetailNotificationObj(scheduleAllDetails );
+          await _notificationManager.SendCrudDataToClientAsync(
+            methodType,
+            objectToSend
+          );
+        }
+        public async Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto scheduleDto)
         {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            await crudService.UpdateAsync(schedule,userId);
-            UpdateInMemory(schedule);
-            await  _scheduleEventManager.UpdateAsync(schedule);
+            await crudService.UpdateAsync(scheduleDto,userId);
+            UpdateInMemory(scheduleDto);
+            await  _scheduleEventManager.UpdateAsync(scheduleDto);
+            ScheduleAllDetails scheduleAllDetails =  GetDetailed(scheduleDto.Id);
+            await SendClientNotificationWithSchedule( new List<ScheduleAllDetails>() {scheduleAllDetails},CrudMethodType.Update);
+            return scheduleAllDetails;
         }
 
-        public async Task<bool> DeleteScheduleAsync(Guid id)
+        public async Task DeleteScheduleAsync(Guid id)
         {
-            using var scope = _serviceProvider.CreateScope();
-            var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
-            await crudService.DeleteAsync(id,userId);
-            RemoveFromMemory(id);
-            await _scheduleEventManager.DeleteAsync(id);
-            return true;
+          using var scope = _serviceProvider.CreateScope();
+          var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
+          ScheduleAllDetails? scheduleAllDetails = GetScheduleDetailsFromCache(id);
+          await crudService.DeleteAsync(id, userId);
+          RemoveFromMemory(id);
+          await _scheduleEventManager.DeleteAsync(id);
+          if (scheduleAllDetails != null)
+          {
+            await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() {scheduleAllDetails}, CrudMethodType.Delete);
+          }
         }
 
         public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(
@@ -202,7 +231,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task UpdateMultipleSchedulesAsync(IEnumerable<ScheduleAllDetails> schedules)
+        public async Task UpdateMultipleSchedulesAsync(List<ScheduleAllDetails> schedules)
         {
             using var scope = _serviceProvider.CreateScope();
             var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
@@ -214,9 +243,19 @@ namespace Application.Schedule.ScheduleObj
                await  _scheduleEventManager.UpdateAsync(schedule.schedules);
 
             }
+
+            await SendClientNotificationWithSchedule(schedules, CrudMethodType.Update);
         }
         public async Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids)
         {
+            List<ScheduleAllDetails> scheduleAllDetailsList = new List<ScheduleAllDetails>();
+            foreach (var id in ids)
+            {
+              scheduleAllDetailsList.Add(
+                GetScheduleDetailsFromCache(id)?? GetDetailed(id)
+              );
+            }
+
             foreach (var id in ids)
             {
                 if (Schedules.TryGetValue(id, out var schedule))
@@ -228,27 +267,18 @@ namespace Application.Schedule.ScheduleObj
                     await _scheduleEventManager.DeleteAsync(id);
                 }
             }
+
+            await SendClientNotificationWithSchedule(scheduleAllDetailsList, CrudMethodType.Delete);
         }
 
-        public async Task SendCrudDataToClientAsync(CrudMethodType method, Dictionary<string, dynamic> resources,
-            List<string> skipUserIds = null,
-            List<string> targetUserIds = null)
-        {
-            await CrudManager.SendCrudDataToClient(
-                CrudRelatedEntity.Schedule,
-                method,
-                resources,
-                skipUserIds,
-                targetUserIds
-            );
-        }
+
 
 
         private async Task UpdateScheduleDetails(IEnumerable<ScheduleDto> schedules)
         {
             foreach (var schedule in schedules)
             {
-                var resource = _resourceManager.GetResourcesByScheduleId(schedule.Id);
+                var resource = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id);
                 var details = new ScheduleAllDetails
                 {
                     schedules = schedule,
@@ -270,7 +300,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public bool IsScheduleNameAvailableAsync(string name,Guid? id=null)
+        public bool IsScheduleNameAvailable(string name,Guid? id=null)
         {
             try
             {
@@ -287,26 +317,44 @@ namespace Application.Schedule.ScheduleObj
         }
 
         //memory functions
-        public void UpdateInMemory(ScheduleDto schedule)
+        public async Task<ScheduleAllDetails>  UpdateInMemory(ScheduleDto schedule)
         {
-            if (Schedules.TryGetValue(schedule.Id, out var existing))
+          try
+          {
+            if (Schedules.TryGetValue(schedule.Id, out ScheduleDto? existing))
             {
-                Schedules.TryUpdate(schedule.Id, schedule, existing);
-                List<ScheduleResourceDto> resourceDtos=  _resourceManager.GetResourcesByScheduleId(schedule.Id);
-                var updatedDetails = new ScheduleAllDetails
-                {
-                    schedules = schedule,
-                    AttachedResources = resourceDtos ?? null
-                };
-                AddOrUpdateScheduleDetails(updatedDetails);
+              Schedules.TryUpdate(schedule.Id, schedule, existing);
+              List<ScheduleResourceDto> resourceDtos = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id);
+              var updatedDetails = new ScheduleAllDetails
+              {
+                schedules = schedule,
+                AttachedResources = resourceDtos ?? null
+              };
+              AddOrUpdateScheduleDetails(updatedDetails);
+              ScheduleAllDetails updatedSchedule = GetScheduleDetailsFromCache(schedule.Id);
+              await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() { updatedSchedule },
+                  CrudMethodType.Update);
 
+              return updatedSchedule;
             }
+            else
+            {
+              throw new KeyNotFoundException(
+                $"Schedule not found in memory [UpdateInMemory]. Id={schedule.Id}");
+            }
+          }
+          catch (Exception ex)
+          {
+            Log.Error("Exception in [UpdateInMemory]",ex.Message);
+            throw;
+          }
+
         }
 
         public void RemoveFromMemory(Guid id)
         {
             Schedules.TryRemove(id, out _);
-            _resourceManager.RemoveFromMemorywithScheduleId(id);
+            _scheduledEntitiesManager.RemoveFromMemorywithScheduleId(id);
             ScheduleDetailsMap.TryRemove(id, out _);
         }
 
@@ -317,5 +365,67 @@ namespace Application.Schedule.ScheduleObj
             AddOrUpdateScheduleDetails(new ScheduleAllDetails { schedules = schedule });
         }
 
+        public async Task<List<ScheduleAllDetails>> CreateAndUpdateResourceMapping(ScheduleResourceDto resourceMap)
+        {
+          List<ScheduleResourceDto> allResources = _scheduledEntitiesManager.GetAllCachedResources();
+          List<ScheduleResourceDto> existingMappings = allResources
+            .Where(x => x.ResourceId == resourceMap.ResourceId &&
+                        x.ResourceType == resourceMap.ResourceType)
+            .ToList();
+
+          // This list will hold all schedules to send to client.
+          var affectedSchedules = new List<ScheduleAllDetails>();
+          foreach (var map in existingMappings)
+          {
+            await _scheduledEntitiesManager.DeleteScheduleResourceMap(map.Id);
+            var deletedSchedule = GetScheduleFromCache(map.ScheduleId);
+            if (deletedSchedule != null)
+            {
+              UpdateInMemory(deletedSchedule);
+              var deletedScheduleDetails =
+                GetScheduleDetailsFromCache(map.ScheduleId);
+              if (deletedScheduleDetails != null)
+                affectedSchedules.Add(deletedScheduleDetails);
+            }
+          }
+
+          //  HANDLE ADD (if ScheduleId is valid)
+          if (resourceMap.ScheduleId != Guid.Empty)
+          {
+            await _scheduledEntitiesManager.AddScheduleResourceMap(resourceMap);
+            var addedSchedule =
+              GetScheduleFromCache(resourceMap.ScheduleId);
+
+            if (addedSchedule != null)
+            {
+                UpdateInMemory(addedSchedule);
+                var addedScheduleDetails =
+                GetScheduleDetailsFromCache(resourceMap.ScheduleId);
+
+              if (addedScheduleDetails != null)
+              {
+                // Prevent duplicates in case add & delete involve same schedule
+                affectedSchedules.RemoveAll(x => x.schedules.Id == addedScheduleDetails.schedules.Id);
+                affectedSchedules.Add(addedScheduleDetails);
+              }
+            }
+          }
+
+          await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.Update);
+          return affectedSchedules;
+        }
+
+        public Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule)
+        {
+          var objectToSend =
+            new Dictionary<string, dynamic>()
+            {
+              {
+                "scheduleAllDetailsList",
+                updatedSchedule
+              },
+            };
+          return objectToSend;
+        }
     }
 }
