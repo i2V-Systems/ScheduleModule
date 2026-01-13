@@ -5,7 +5,7 @@ using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Scheduling.Contracts.AttachedResources;
 
-public interface IResourceManager
+public interface IScheduledEntitiesManager
 {
     public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId);
     public event EventHandler<ScheduleResourceDto> ScheduleResourcePublish;
