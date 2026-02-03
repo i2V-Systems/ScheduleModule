@@ -91,7 +91,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
             await scheduler.ScheduleJob(job, trigger, cancellationToken);
 
-            Log.Error("Scheduled job {JobKey} for schedule {ScheduleId} with {TopicCount} topics",
+            Log.Information("Scheduled job {JobKey} for schedule {ScheduleId} with {TopicCount} topics",
                 jobKey, metadata.scheduleId, topics.Count);
 
             return ScheduleResult.Success(new List<string> { jobKey });
