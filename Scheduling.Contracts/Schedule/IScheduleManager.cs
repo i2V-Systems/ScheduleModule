@@ -26,7 +26,7 @@ public interface IScheduleManager
         // Core CRUD operations
         ScheduleDto Get(Guid id);
         ScheduleAllDetails GetDetailed(Guid id);
-        Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto, string userId = null);
+        Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto, string? userId = null);
         Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto dto);
         Task DeleteScheduleAsync(Guid id);
 

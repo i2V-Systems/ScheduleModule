@@ -23,8 +23,7 @@ public static class ScheduleModuleRegistration
     public static SchedulerType CurrentSchedulerType { get; private set; }
 
     public static IServiceCollection AddSchedulingModule(
-        this IServiceCollection services,
-        IConfiguration configuration)
+        this IServiceCollection services)
     {
         return services;
     }
@@ -94,9 +93,9 @@ public static class ServiceRegistrationExtensions
             .ToArray();
 
         var types = assemblies
-            .SelectMany(a => a.GetTypes())
-            .Where(t => t.IsDefined(typeof(TAttribute), false))
-            .Where(t => t.IsClass && !t.IsAbstract);
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(type => type.IsDefined(typeof(TAttribute), false))
+            .Where(type => type.IsClass && !type.IsAbstract);
 
         foreach (var type in types)
         {
@@ -116,7 +115,8 @@ public static class ServiceRegistrationExtensions
             // Skip system interfaces and other non-relevant interfaces
             if (ShouldRegisterInterface(interfaceType))
             {
-                services.Add(new ServiceDescriptor(interfaceType, type, lifetime));
+              var serviceDescriptor = new ServiceDescriptor(interfaceType, type, lifetime);
+                services.Add(serviceDescriptor);
             }
         }
     }
@@ -124,13 +124,13 @@ public static class ServiceRegistrationExtensions
     private static bool ShouldRegisterInterface(Type interfaceType)
     {
         // Skip system interfaces
-        if (interfaceType.Namespace?.StartsWith("System") == true)
+        if (interfaceType.Namespace?.StartsWith("System",StringComparison.CurrentCulture) == true)
             return false;
 
-        if (interfaceType.Namespace?.StartsWith("Microsoft") == true)
+        if (interfaceType.Namespace?.StartsWith("Microsoft",StringComparison.CurrentCulture) == true)
             return false;
 
-        if (interfaceType.Namespace?.StartsWith("Windows") == true)
+        if (interfaceType.Namespace?.StartsWith("Windows",StringComparison.CurrentCulture) == true)
             return false;
 
         // Skip disposable interface (it's handled by the framework)
@@ -138,9 +138,9 @@ public static class ServiceRegistrationExtensions
             return false;
 
         // Skip marker interfaces or other non-service interfaces
-        if (interfaceType.Name.StartsWith("IEnumerable") ||
-            interfaceType.Name.StartsWith("ICollection") ||
-            interfaceType.Name.StartsWith("IList"))
+        if (interfaceType.Name.StartsWith("IEnumerable",StringComparison.CurrentCulture) ||
+            interfaceType.Name.StartsWith("ICollection",StringComparison.CurrentCulture) ||
+            interfaceType.Name.StartsWith("IList",StringComparison.CurrentCulture))
             return false;
 
         return true;

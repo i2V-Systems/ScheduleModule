@@ -60,7 +60,6 @@ public interface IScheduleRepository <T>
         void Update(T entity, Guid userId);
         void UpdateRange(List<T> entities, Guid userId);
 
-        void Dispose();
 
         List<T> GetAllWithSkipTakeThenInclude(
             int skip,
@@ -68,5 +67,5 @@ public interface IScheduleRepository <T>
             Expression<Func<T, bool>> predicate,
             params Expression<Func<T, object>>[] includeProperties
         );
-    
+
 }

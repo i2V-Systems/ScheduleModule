@@ -36,7 +36,7 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 _context.Set<T>().Add(entity);
                 _context.SaveChanges();
                 this.DetachEntity(entity);
-                String tablename = GetTableNameByEntityType(entity);
+                String tablename = GetTableNameByEntityType()?? throw new InvalidOperationException("Tablename not found");
                 LoggingManager.NotifyLogger<T>(
                     entity.Id,
                     tablename,
@@ -44,9 +44,9 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                     userId
                 );
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Add);
+                ExceptionHandler.ThrowDatabaseExceptions<T>(exception, OperationType.Add);
             }
         }
     }
@@ -63,9 +63,9 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
             try{
                 EntityEntry dbEntityEntry = _context.Entry<T>(entity);
                 var result = _context.Set<T>().AddAsync(entity).Result;
-                _context.SaveChanges();
+                 _context.SaveChanges();
                 this.DetachEntity(entity);
-                String tablename = GetTableNameByEntityType(entity);
+                String tablename = GetTableNameByEntityType()?? throw new InvalidOperationException("Tablename not found");
                 LoggingManager.NotifyLogger<T>(
                     entity.Id,
                     tablename,
@@ -73,9 +73,9 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                     userId
                 );
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Add);
+                ExceptionHandler.ThrowDatabaseExceptions<T>(exception, OperationType.Add);
             }
         }
     }
@@ -91,7 +91,7 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 foreach (var entity in entities)
                 {
                     this.DetachEntity(entity);
-                    String tablename = GetTableNameByEntityType(entity);
+                    String tablename = GetTableNameByEntityType()?? throw new InvalidOperationException("Tablename not found");
                     LoggingManager.NotifyLogger<T>(
                         entity.Id,
                         tablename,
@@ -100,9 +100,9 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                     );
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Add);
+                ExceptionHandler.ThrowDatabaseExceptions<T>(exception, OperationType.Add);
             }
         }
     }
@@ -147,10 +147,11 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     {
         lock (thisLock)
         {
-            String tablename = GetTableNameByEntityType(entity);
+            String tablename = GetTableNameByEntityType()?? throw new InvalidOperationException("Tablename not found");
+            var entityId = entity.Id.ToString();
             IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
                 tablename,
-                entity.Id.ToString()
+                entityId
             );
             _context.Remove<T>(entity);
             _context.SaveChanges();
@@ -174,10 +175,11 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
             _context.SaveChanges();
             foreach (var entity in entities)
             {
-                String tablename = GetTableNameByEntityType(entity);
+                String tablename = GetTableNameByEntityType()?? throw new InvalidOperationException("Tablename not found");
+                var entityId = entity.Id.ToString();
                 IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
                     tablename,
-                    entity.Id.ToString()
+                   entityId
                 );
                 LoggingManager.NotifyLogger<T>(
                     entity.Id,
@@ -219,7 +221,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     {
         lock (thisLock)
         {
-            return _context.Set<T>().AsNoTracking().FirstOrDefault(x => x.Id == id);
+            return _context.Set<T>().AsNoTracking().FirstOrDefault(elem => elem.Id == id) ?? throw new InvalidOperationException(
+              $"{typeof(T).Name} with id {id} not found");
         }
     }
 
@@ -232,7 +235,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     {
         lock (thisLock)
         {
-            return _context.Set<T>().AsNoTracking().FirstOrDefaultAsync(x => x.Id == id).Result;
+            return _context.Set<T>().AsNoTracking().FirstOrDefaultAsync(elem => elem.Id == id).Result ?? throw new InvalidOperationException(
+              $"{typeof(T).Name} with id {id} not found");
         }
     }
 
@@ -290,7 +294,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     {
         lock (thisLock)
         {
-            return _context.Set<T>().AsNoTracking().FirstOrDefault(match);
+            return _context.Set<T>().AsNoTracking().FirstOrDefault(match) ?? throw new InvalidOperationException(
+              $" not found");
         }
     }
 
@@ -303,7 +308,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     {
         lock (thisLock)
         {
-            return _context.Set<T>().AsNoTracking().FirstOrDefaultAsync(match).Result;
+            return _context.Set<T>().AsNoTracking().FirstOrDefaultAsync(match).Result ?? throw new InvalidOperationException(
+              $" not found");
         }
     }
 
@@ -326,7 +332,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 query = query.Include(includeProperty);
             }
 
-            return query.Where(predicate).AsNoTracking().FirstOrDefaultAsync().Result;
+            return query.Where(predicate).AsNoTracking().FirstOrDefaultAsync().Result ?? throw new InvalidOperationException(
+              $"not found");
         }
     }
 
@@ -343,7 +350,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 query = query.Include(includeProperty);
             }
 
-            return query.Where(predicate).AsNoTracking().FirstOrDefault();
+            return query.Where(predicate).AsNoTracking().FirstOrDefault() ?? throw new InvalidOperationException(
+              $"not found");
         }
     }
 
@@ -445,7 +453,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
 
             IQueryable<T> resultWithEagerLoading = func(result).AsNoTracking();
 
-            return resultWithEagerLoading.FirstOrDefault(match);
+            return resultWithEagerLoading.FirstOrDefault(match) ?? throw new InvalidOperationException(
+              $" not found");
         }
     }
 
@@ -485,10 +494,11 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
         lock (thisLock)
         {
             try{
-                String tablename = GetTableNameByEntityType(entity);
+                String tablename = GetTableNameByEntityType()?? throw new InvalidOperationException("Tablename not found");
+                var entityId = entity.Id.ToString();
                 IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
                     tablename,
-                    entity.Id.ToString()
+                    entityId
                 );
                 _context.Set<T>().Update(entity);
                 _context.SaveChanges();
@@ -504,9 +514,9 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                     prevEntity
                 );
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Update);
+                ExceptionHandler.ThrowDatabaseExceptions<T>(exception, OperationType.Update);
             }
         }
     }
@@ -527,10 +537,11 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 foreach (var entity in entities)
                 {
                     this.DetachEntity(entity);
-                    String tablename = GetTableNameByEntityType(entity);
+                    String tablename = GetTableNameByEntityType() ?? throw new InvalidOperationException("Tablename not found");
+                    var entityId = entity.Id.ToString();
                     IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
                         tablename,
-                        entity.Id.ToString()
+                        entityId
                     );
 
                     // Log each update
@@ -543,39 +554,14 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                     );
                 }
             }
-            catch(Exception ex)
+            catch(Exception exception)
             {
-                ExceptionHandler.ThrowDatabaseExceptions<T>(ex, OperationType.Update);
+                ExceptionHandler.ThrowDatabaseExceptions<T>(exception, OperationType.Update);
             }
         }
     }
 
-    //Update selected entries from resource using view
 
-    protected virtual void Dispose(bool disposing)
-    {
-        lock (thisLock)
-        {
-            if (!this.disposed)
-            {
-                if (disposing)
-                {
-                    _context.Dispose();
-                }
-
-                this.disposed = true;
-            }
-        }
-    }
-
-    public void Dispose()
-    {
-        lock (thisLock)
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-    }
 
     public void DetachEntity(T entity)
     {
@@ -595,7 +581,7 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
         lock (thisLock)
         {
             IQueryable<T> query = _context.Set<T>();
-            query = query.Where(predicate).OrderBy(x => x.Id).Skip(skip).Take(pageLimit);
+            query = query.Where(predicate).OrderBy(elem => elem.Id).Skip(skip).Take(pageLimit);
             foreach (var includeProperty in includeProperties)
             {
                 query = query.Include(includeProperty);
@@ -604,10 +590,14 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
             return query.ToList();
         }
     }
-    public string GetTableNameByEntityType(T entity)
+    public string? GetTableNameByEntityType()
     {
         var entityType = _context.Model.FindEntityType(typeof(T));
-
+        if (entityType == null)
+        {
+          throw new InvalidOperationException(
+            $" Not found");
+        }
         return entityType.GetTableName();
     }
 }
