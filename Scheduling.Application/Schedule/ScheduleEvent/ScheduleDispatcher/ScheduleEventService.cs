@@ -77,7 +77,6 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
                 if (!scheduleValidation.IsValid)
                 {
                     Log.Error("Schedule validation failed for schedule {ScheduleId}: {Errors}",
-                    Log.Error("Schedule validation failed for schedule {ScheduleId}: {Errors}",
                         schedule.Id,  scheduleValidation.Errors);
                     return ScheduleResult.Failure($"Schedule  validation failed: {string.Join(", ", scheduleValidation.Errors)}");
                 }

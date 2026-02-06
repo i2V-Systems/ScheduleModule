@@ -23,9 +23,9 @@ public static class ApplicationDependencyInjection
 {
     private static IServiceProvider ServiceProvider;
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
-    { 
-       
-     
+    {
+
+
        // Core Application Services
        services.AddTransient<IScheduleEventService,ScheduleEventService>();
        services.AddSingleton<IScheduledEntitiesManager, ScheduledEntitiesManager>();
@@ -36,11 +36,11 @@ public static class ApplicationDependencyInjection
        services.AddSingleton<IScheduleEventManager, ScheduleEventManager>();
        services.AddSingleton<IScheduleManager, ScheduleManager>();
        // services.AddHostedService<ScheduleInitializationService>();
-       
+
        services.AddSchedulingScheduler(configuration);
-       
+
        // Auto-register services with attributes (your current approach)
-       
+
         services.AddServicesOfType<IScopedService>();
         services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();
         services.AddServicesOfType<ITransientService>();
@@ -49,7 +49,7 @@ public static class ApplicationDependencyInjection
         services.AddServicesWithAttributeOfType<SingletonServiceAttribute>();
 
         // MediatR
-        services.AddMediatR(cfg => 
+        services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(
                 Assembly.Load(new AssemblyName("Scheduling.Application")))
             );
@@ -60,11 +60,7 @@ public static class ApplicationDependencyInjection
     public static async Task InitialiseManagers(IServiceProvider serviceProvider)
     {
         ServiceProvider = serviceProvider;
-        var scheduleManager = serviceProvider.GetRequiredService<IScheduleManager>();
-        if (scheduleManager is ScheduleManager manager)
-        {
-            await manager.InitializeAsync();
-        }
+
         var resourcemanager = serviceProvider.GetRequiredService<IScheduledEntitiesManager>();
         if (resourcemanager is ScheduledEntitiesManager resManager)
         {

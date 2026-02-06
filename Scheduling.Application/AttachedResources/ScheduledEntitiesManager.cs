@@ -215,6 +215,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
               Guid mappingId = await crudService.DeleteResourceSchdeuleMappingAsync(mapping,userId);
               ScheduleResourcesMap.TryRemove(mappingId, out var map);
             }
+
           }
           catch (Exception ex)
           {

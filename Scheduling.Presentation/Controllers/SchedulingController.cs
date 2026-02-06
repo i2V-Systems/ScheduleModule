@@ -2,6 +2,7 @@
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
@@ -123,21 +124,8 @@ namespace Presentation.Controllers
                         code = "DUPLICATE_NAME"
                     });
                 }
-                await _scheduleManager.UpdateScheduleAsync(schedule.schedules);
-                ScheduleAllDetails updatedSchedule =   _scheduleManager.GetDetailed(schedule.schedules.Id);
-                var objectToSend = new Dictionary<string, dynamic>()
-                {
-                    {
-                        "scheduleAllDetailsList",
-                        new List<ScheduleAllDetails>() { updatedSchedule }
-                    },
-                };
-
-                _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Update,
-                    objectToSend
-                );
-                return Ok(updatedSchedule);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule.schedules);
+                return Ok(scheduleAllDetails);
             }
             catch (Exception ex)
             {
@@ -213,24 +201,8 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                _scheduleManager.UpdateInMemory(schedule);
-                List<ScheduleAllDetails?> scheduleAllDetailsList =
-                    new List<ScheduleAllDetails?>();
-
-                var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
-                var objectToSend =
-                    new Dictionary<string, dynamic>()
-                    {
-                        {
-                            "scheduleAllDetailsList",
-                            new List<ScheduleAllDetails>() { updatedSchedule }
-                        },
-                    };
-                await _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Update,
-                    objectToSend
-                );
-                return Ok(updatedSchedule);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
+                return Ok(scheduleAllDetails);
             }
             catch (Exception e)
             {
@@ -244,10 +216,12 @@ namespace Presentation.Controllers
         {
           try
           {
-            await _resourceManager.DeleteMultipleResources(resourceDto);
-            await _resourceManager.RefreshCacheAsync();
+            //TODO use notification manager for crud event from schedule manager internally
+            await _scheduledEntitiesManager.DeleteMultipleResources(resourceDto);
+            await _scheduledEntitiesManager.RefreshCacheAsync();
             await _scheduleManager.RefreshCacheAsync();
-            var updatedSchedule= _scheduleManager.GetAllCachedSchedules();
+            IEnumerable<ScheduleDto> updatedSchedule  = _scheduleManager.GetAllCachedSchedules();
+
             var objectToSend =
               new Dictionary<string, dynamic>()
               {
@@ -350,21 +324,8 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.DeleteMultipleScheduleResourceMap(data.Ids,data.Schedule);
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
-                _scheduleManager.UpdateInMemory(schedule);
-                var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(data.Schedule.schedules.Id);
-                var objectToSend =
-                    new Dictionary<string, dynamic>()
-                    {
-                        {
-                            "scheduleAllDetailsList",
-                            new List<ScheduleAllDetails>() { updatedSchedule }
-                        },
-                    };
-                await _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Update,
-                    objectToSend
-                );
-                return Ok(updatedSchedule);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
+                return Ok(scheduleAllDetails);
             }
             catch (Exception e)
             {
@@ -421,24 +382,8 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                await _scheduleManager.UpdateScheduleAsync(schedule);
-                List<ScheduleAllDetails?> scheduleAllDetailsList =
-                    new List<ScheduleAllDetails?>();
-
-                var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
-                var objectToSend =
-                    new Dictionary<string, dynamic>()
-                    {
-                        {
-                            "scheduleAllDetailsList",
-                            new List<ScheduleAllDetails>() { updatedSchedule }
-                        },
-                    };
-                await _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Update,
-                    objectToSend
-                );
-                return Ok(updatedSchedule);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule);
+                return Ok(scheduleAllDetails.schedules);
             }
             catch (Exception e)
             {
@@ -454,24 +399,8 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.UpdateScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                _scheduleManager.UpdateInMemory(schedule);
-                List<ScheduleAllDetails?> scheduleAllDetailsList =
-                    new List<ScheduleAllDetails?>();
-
-                var updatedSchedule= _scheduleManager.GetScheduleDetailsFromCache(schedule.Id);
-                var objectToSend =
-                    new Dictionary<string, dynamic>()
-                    {
-                        {
-                            "scheduleAllDetailsList",
-                            new List<ScheduleAllDetails>() { updatedSchedule }
-                        },
-                    };
-                await _scheduleManager.SendCrudDataToClientAsync(
-                    CrudMethodType.Update,
-                    objectToSend
-                );
-                return Ok(updatedSchedule);
+                ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(schedule);
+                return Ok(scheduleAllDetails);
             }
             catch (Exception e)
             {
