@@ -51,7 +51,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 
                 if (result.IsSuccess)
                 {
-                  Log.Information("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}",
+                    Log.Error("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}",
                         result.ScheduledJobIds.Count, schedule.Id);
                 }
                 return result;
@@ -83,7 +83,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 
                 if (result.IsSuccess)
                 {
-                  Log.Information("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}",
+                    Log.Error("Successfully scheduled {JobCount} jobs for schedule {ScheduleId}",
                         result.ScheduledJobIds.Count, schedule.Id);
                 }
                 return result;
@@ -110,7 +110,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 
                 if (success)
                 {
-                  Log.Information("Successfully deleted {JobCount} jobs for schedule {ScheduleId}",
+                    Log.Information("Successfully deleted {JobCount} jobs for schedule {ScheduleId}",
                         jobKeys.Count, id);
                     return ScheduleResult.Success(jobKeys.ToList());
                 }
