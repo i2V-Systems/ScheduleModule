@@ -29,6 +29,8 @@ public interface IScheduleManager
         Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto, string userId = null);
         Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto dto);
         Task DeleteScheduleAsync(Guid id);
+        Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,
+          CrudMethodType methodType);
 
         // Complex queries
         Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(string userName);

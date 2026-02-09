@@ -216,24 +216,17 @@ namespace Presentation.Controllers
         {
           try
           {
+            HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
+            if (!ModelState.IsValid)
+            {
+              return BadRequest();
+            }
             //TODO use notification manager for crud event from schedule manager internally
             await _scheduledEntitiesManager.DeleteMultipleResources(resourceDto);
             await _scheduledEntitiesManager.RefreshCacheAsync();
             await _scheduleManager.RefreshCacheAsync();
-            IEnumerable<ScheduleDto> updatedSchedule  = _scheduleManager.GetAllCachedSchedules();
-
-            var objectToSend =
-              new Dictionary<string, dynamic>()
-              {
-                {
-                  "scheduleAllDetailsList",
-                  updatedSchedule.ToList()
-                },
-              };
-            await _scheduleManager.SendCrudDataToClientAsync(
-              CrudMethodType.Update,
-              objectToSend
-            );
+            IEnumerable<ScheduleAllDetails> updatedSchedule  = await _scheduleManager.GetScheduleWithAllDetails(userName);
+            await _scheduleManager.SendClientNotificationWithSchedule( updatedSchedule.ToList() , CrudMethodType.Update);
             return Ok();
           }
           catch (Exception e)
