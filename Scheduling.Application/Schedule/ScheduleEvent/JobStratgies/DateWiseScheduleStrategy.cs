@@ -36,12 +36,15 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
         {
             if (schedule.EndDateTime.HasValue)
             {
+              ScheduleWindow startWindow = new ScheduleWindow(schedule.StartDateTime,null);
+              ScheduleWindow endWindow = new ScheduleWindow(schedule.EndDateTime??DateTime.Now,null);
+
                 return await ScheduleStartAndEndAsync(
                     topics,
-                    async (t, trigger, dt, _, ct) => await scheduler.ScheduleDateWiseAsync(t, trigger, dt, ct),
+                    async (readOnlyList, trigger, dt, _, ct) => await scheduler.ScheduleDateWiseAsync(readOnlyList, trigger, dt, ct),
                     schedule.Id,
-                    schedule.StartDateTime, null,
-                    schedule.EndDateTime??DateTime.Now, null,
+                    startWindow,
+                    endWindow,
                     cancellationToken);
             }
             else
@@ -49,18 +52,18 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
                 // Only start/once event
                 var trigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Once);
                 var result = await scheduler.ScheduleDateWiseAsync(topics, trigger, schedule.StartDateTime, cancellationToken);
-                return result.IsSuccess 
+                return result.IsSuccess
                     ? ScheduleResult.Success(result.ScheduledJobIds)
                     : result;
             }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error in date-wise schedule strategy for schedule {ScheduleId}", schedule.Id);
-            return ScheduleResult.Failure("Error in date-wise schedule strategy", ex);
+            _logger.LogError(exception, "Error in date-wise schedule strategy for schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Error in date-wise schedule strategy", exception);
         }
     }
-    
+
     public async Task<ScheduleResult> UpdateJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler,
         CancellationToken cancellationToken = default)
     {
@@ -77,15 +80,15 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
             var result = await ScheduleJobAsync(schedule, topics, scheduler, cancellationToken);
             if (result.IsSuccess)
             {
-                Log.Information("Successfully updated daily schedule {ScheduleId} for {TopicCount} topics", 
+                Log.Information("Successfully updated daily schedule {ScheduleId} for {TopicCount} topics",
                     schedule.Id, topics.Count);
             }
             return result;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Log.Error(ex, "Failed to update daily schedule {ScheduleId}", schedule.Id);
-            return ScheduleResult.Failure("Failed to update daily schedule", ex);
+            Log.Error(exception, "Failed to update daily schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Failed to update daily schedule", exception);
         }
     }
 
@@ -96,16 +99,21 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
             var jobKeys = await scheduler.GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
             if (!jobKeys.Any())
             {
-                return ScheduleResult.Success(new List<string>());
+              List<string> emptyList = new List<string>();
+                return ScheduleResult.Success(emptyList);
             }
             var success = await scheduler.UnscheduleAllAsync(jobKeys, cancellationToken);
-            return success 
-                ? ScheduleResult.Success(jobKeys.ToList()) 
-                : ScheduleResult.Failure($"Failed to delete some jobs for schedule {scheduleId}");
+            if (success)
+            {
+              var jobKeyList = jobKeys.ToList();
+              return ScheduleResult.Success(jobKeyList);
+            }
+            return
+                 ScheduleResult.Failure($"Failed to delete some jobs for schedule {scheduleId}");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to delete schedule {scheduleId}", ex);
+            return ScheduleResult.Failure($"Failed to delete schedule {scheduleId}", exception);
         }
     }
 
@@ -114,13 +122,15 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
         try
         {
             var success = await scheduler.ResumeJobAsync(scheduleId, cancellationToken);
-            return success 
-                ? ScheduleResult.Success(new List<string> { scheduleId.ToString() }) 
+            List<string> list = new List<string> { scheduleId.ToString() };
+
+            return success
+                ? ScheduleResult.Success(list)
                 : ScheduleResult.Failure($"Failed to enable schedule {scheduleId}");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to enable schedule {scheduleId}", ex);
+            return ScheduleResult.Failure($"Failed to enable schedule {scheduleId}", exception);
         }
     }
 
@@ -128,18 +138,18 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
     {
         try
         {
-            var success = await scheduler.PauseJobAsync(scheduleId, cancellationToken);
-            
-            return success 
-                ? ScheduleResult.Success(new List<string> { scheduleId.ToString() }) 
+            bool success = await scheduler.PauseJobAsync(scheduleId, cancellationToken);
+            List<string> scheduleIdList =   new List<string> { scheduleId.ToString() };
+            return success
+                ? ScheduleResult.Success(scheduleIdList)
                 : ScheduleResult.Failure($"Failed to disable schedule {scheduleId}");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to disable schedule {scheduleId}", ex);
+            return ScheduleResult.Failure($"Failed to disable schedule {scheduleId}", exception);
         }
     }
-    
+
     /// <summary>
     /// Generic helper to schedule start & end events.
     /// </summary>
@@ -147,27 +157,26 @@ internal class DateWiseScheduleStrategy : BaseScheduleJobStrategy
         IReadOnlyList<Resources> topics,
         Func<IReadOnlyList<Resources>, ScheduleEventTrigger, DateTime, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
         Guid scheduleId,
-        DateTime startDateTime, string? startCron,
-        DateTime endDateTime, string? endCron,
+        ScheduleWindow startWindow,
+        ScheduleWindow endWindow,
         CancellationToken cancellationToken)
     {
         var allJobIds = new List<string>();
 
         // Schedule start event
         var startTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.Start);
-        var startResult = await scheduleFunc(topics, startTrigger, startDateTime, startCron, cancellationToken);
+        var startResult = await scheduleFunc(topics, startTrigger, startWindow.DateTime, startWindow.Cron, cancellationToken);
         if (!startResult.IsSuccess) return startResult;
         allJobIds.AddRange(startResult.ScheduledJobIds);
 
         // Schedule end event
         var endTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.End);
-        var endResult = await scheduleFunc(topics, endTrigger, endDateTime, endCron, cancellationToken);
+        var endResult = await scheduleFunc(topics, endTrigger, endWindow.DateTime, endWindow.Cron, cancellationToken);
         if (!endResult.IsSuccess) return endResult;
         allJobIds.AddRange(endResult.ScheduledJobIds);
 
         _logger.LogInformation("Successfully scheduled date-wise jobs for schedule {ScheduleId}", scheduleId);
         return ScheduleResult.Success(allJobIds);
     }
-    
+
 }
-    

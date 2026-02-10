@@ -17,19 +17,19 @@ public abstract class BaseScheduleJobStrategy : IScheduleJobStrategy
         {
             // First, get existing job keys for this schedule
             var existingJobKeys = await scheduler.GetJobKeysForScheduleAsync(schedule.Id, cancellationToken);
-            
+
             // Delete existing jobs
             if (existingJobKeys.Any())
             {
                 await scheduler.UnscheduleAllAsync(existingJobKeys, cancellationToken);
             }
-            
+
             // Create new jobs with updated configuration
             return await ScheduleJobAsync(schedule, topics, scheduler, cancellationToken);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to update schedule {schedule.Id}", ex);
+            return ScheduleResult.Failure($"Failed to update schedule {schedule.Id}", exception);
         }
     }
 
@@ -38,21 +38,23 @@ public abstract class BaseScheduleJobStrategy : IScheduleJobStrategy
         try
         {
             var jobKeys = await scheduler.GetJobKeysForScheduleAsync(scheduleId, cancellationToken);
-            
+
             if (!jobKeys.Any())
-            {
-                return ScheduleResult.Success(new List<string>());
+            {              List<string> emptyList = new List<string>();
+
+                return ScheduleResult.Success(emptyList);
             }
-            
+
             var success = await scheduler.UnscheduleAllAsync(jobKeys, cancellationToken);
-            
-            return success 
-                ? ScheduleResult.Success(jobKeys.ToList()) 
+            List<string> list = jobKeys.ToList();
+
+            return success
+                ? ScheduleResult.Success(list)
                 : ScheduleResult.Failure($"Failed to delete some jobs for schedule {scheduleId}");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to delete schedule {scheduleId}", ex);
+            return ScheduleResult.Failure($"Failed to delete schedule {scheduleId}", exception);
         }
     }
 
@@ -61,14 +63,14 @@ public abstract class BaseScheduleJobStrategy : IScheduleJobStrategy
         try
         {
             var success = await scheduler.ResumeJobAsync(scheduleId, cancellationToken);
-            
-            return success 
-                ? ScheduleResult.Success(new List<string> { scheduleId.ToString() }) 
+          List<string> scheduleIdList =new List<string> { scheduleId.ToString() };
+            return success
+                ? ScheduleResult.Success(scheduleIdList)
                 : ScheduleResult.Failure($"Failed to enable schedule {scheduleId}");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to enable schedule {scheduleId}", ex);
+            return ScheduleResult.Failure($"Failed to enable schedule {scheduleId}", exception);
         }
     }
 
@@ -77,15 +79,19 @@ public abstract class BaseScheduleJobStrategy : IScheduleJobStrategy
         try
         {
             var success = await scheduler.PauseJobAsync(scheduleId, cancellationToken);
-            
-            return success 
-                ? ScheduleResult.Success(new List<string> { scheduleId.ToString() }) 
+            List<string> scheduleKeys = new List<string> { scheduleId.ToString() };
+            return success
+                ? ScheduleResult.Success(scheduleKeys)
                 : ScheduleResult.Failure($"Failed to disable schedule {scheduleId}");
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            return ScheduleResult.Failure($"Failed to disable schedule {scheduleId}", ex);
+            return ScheduleResult.Failure($"Failed to disable schedule {scheduleId}", exception);
         }
     }
     public abstract bool CanHandle(ScheduleType scheduleType);
+    public sealed record ScheduleWindow(
+      DateTime DateTime,
+      string? Cron);
+
 }

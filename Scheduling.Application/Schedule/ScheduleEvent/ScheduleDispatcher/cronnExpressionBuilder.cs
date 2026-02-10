@@ -16,9 +16,9 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
             {
                 Quartz.CronExpression.ValidateExpression(cronExpression);
             }
-            catch (Exception ex)
+            catch (Exception innerException)
             {
-                throw new InvalidOperationException($"Generated invalid cron expression: {cronExpression}", ex);
+                throw new InvalidOperationException($"Generated invalid cron expression: {cronExpression}", innerException);
             }
             return cronExpression;
         }
@@ -31,7 +31,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
             }
 
             // Sort and remove duplicates
-            var cronDayStrings = selectedDays.Distinct().Select(ConvertDayEnumToCronDay).OrderBy(x => x);
+            var cronDayStrings = selectedDays.Distinct().Select(ConvertDayEnumToCronDay).OrderBy(value => value);
             // Join with commas for multiple days
             return string.Join(",", cronDayStrings);
         }
@@ -42,7 +42,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
             {
                 Days.Sunday => "SUN",
                 Days.Monday => "MON",
-                Days.Tuesday => "TUE", 
+                Days.Tuesday => "TUE",
                 Days.Wednesday => "WED",
                 Days.Thursday => "THU",
                 Days.Friday => "FRI",
@@ -64,7 +64,7 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
                 _ => throw new ArgumentException($"Invalid day: {day}")
             };
         }
-        
+
         public static string BuildDailyCronExpression(DateTime time)
         {
             return $"0 {time.Minute} {time.Hour} * * ?";
@@ -86,4 +86,3 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
         }
     }
 }
-    

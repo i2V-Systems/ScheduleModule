@@ -40,7 +40,7 @@ internal class ScheduleStrategyFactory: IScheduleStrategyFactory
             if (!_instanceCache.ContainsKey(strategy.Name))
             {
                 _strategyCache[strategy.Name] = strategy;
-                _instanceCache[strategy.Name] = CreateStrategyInstance(strategy);
+                _instanceCache[strategy.Name] = CreateStrategyInstance(strategy) ?? throw new InvalidOperationException("Exception from CreateStrategyInstance Null reference");
                 Log.Debug($"Registered strategy: {strategy.GetType().Name} for {strategy.Name}.");
             }
         }
@@ -64,7 +64,7 @@ internal class ScheduleStrategyFactory: IScheduleStrategyFactory
             }
         }
         // Try fallback - look for strategies that can handle this type
-        var fallbackStrategy = _instanceCache.Values.Where(s => s.CanHandle(scheduleType)).FirstOrDefault();
+        var fallbackStrategy = _instanceCache.Values.Where(scheduleJobStrategy => scheduleJobStrategy.CanHandle(scheduleType)).FirstOrDefault();
         if (fallbackStrategy != null)
         {
             Log.Error($"Using fallback strategy {fallbackStrategy.GetType().Name} for {key}");
@@ -74,7 +74,7 @@ internal class ScheduleStrategyFactory: IScheduleStrategyFactory
                                         $"Available strategies: {string.Join(", ", _instanceCache.Keys)}");
     }
     
-    private  IScheduleJobStrategy CreateStrategyInstance(Type strategyType)
+    private  IScheduleJobStrategy? CreateStrategyInstance(Type strategyType)
     {
         try
         {
@@ -84,11 +84,11 @@ internal class ScheduleStrategyFactory: IScheduleStrategyFactory
             {
                 return (IScheduleJobStrategy)serviceFromDi;
             }
-            return Activator.CreateInstance(strategyType) as IScheduleJobStrategy;
+            return Activator.CreateInstance(strategyType) as IScheduleJobStrategy ;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            throw new InvalidOperationException($"Failed to create instance of {strategyType.Name}: {ex.Message}", ex);
+            throw new InvalidOperationException($"Failed to create instance of {strategyType.Name}: {exception.Message}", exception);
         }
     }
     private static string CreateCacheKey(ScheduleType scheduleType)

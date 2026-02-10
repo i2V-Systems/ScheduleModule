@@ -17,81 +17,129 @@ public class TopicDispatcherJob : IJob
     private readonly ILogger<TopicDispatcherJob> _logger;
 
     public const string Name = nameof(TopicDispatcherJob);
-    
+
     public TopicDispatcherJob(IServiceProvider serviceProvider, ILogger<TopicDispatcherJob> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
+    private static ScheduleEventTrigger CreateEventTrigger(
+      JobExecutionData jobData)
+    {
+      return new ScheduleEventTrigger(
+        jobData.ScheduleId,
+        jobData.EventType);
+    }
 
     public async Task Execute(IJobExecutionContext context)
     {
-        try
-        {
-            var jobKey = context.JobDetail.Key;
-            if (context.Recovering)
-            {
-                Log.Error("RECOVERING missed job execution for: {JobKey} at {RecoveryTime}", 
-                    jobKey, DateTimeOffset.Now);
-            }
-            else
-            {
-                Log.Error("Normal job execution for: {JobKey} at {ExecutionTime}", 
-                    jobKey, DateTimeOffset.Now);
-            }
-            
-            var data = context.MergedJobDataMap;
+      try
+      {
+        LogExecution(context);
 
-            // Extract job data
-            var scheduleId = Guid.Parse(data.GetString("scheduleId") ?? string.Empty);
-            var eventTypeString = data.GetString("eventType") ?? string.Empty;
-            var topicsJson = data.GetString("topics") ?? "[]";
+        var jobData = ExtractJobData(context.MergedJobDataMap);
+        var topics = ParseTopics(jobData.TopicsJson);
+        var eventTrigger = CreateEventTrigger(jobData);
 
-            // Parse topics from JSON
-            var topicStrings = JsonConvert.DeserializeObject<List<string>>(topicsJson) ?? new List<string>();
+        var handlers = GetInterestedHandlers(topics).ToList();
 
-            // Convert string topics to enum values
-            var topics = new List<Resources>();
-            foreach (var topicString in topicStrings)
-            {
-                if (Enum.TryParse<Resources>(topicString, out var resource))
-                {
-                    topics.Add(resource);
-                }
-            }
-
-            if (!Enum.TryParse<ScheduleEventType>(eventTypeString, out var eventType))
-            {
-                throw new InvalidOperationException($"Invalid event type: {eventTypeString}");
-            }
-
-            var eventTrigger = new ScheduleEventTrigger(scheduleId, eventType);
-            var handlers = _serviceProvider.GetServices<ITopicAwareJobHandler>().ToList();
-            var interestedHandlers = new List<ITopicAwareJobHandler>();
-
-            foreach (var handler in handlers)
-            {
-                // Check if handler is interested in any of the topics
-                var hasMatchingTopic = topics.Any(topic => handler.InterestedTopics.Contains(topic));
-
-                if (hasMatchingTopic)
-                {
-                    interestedHandlers.Add(handler);
-                }
-            }
-
-            // Process with interested handlers
-            await ProcessWithHandlersAsync(eventTrigger, topics, interestedHandlers);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing job");
-            throw;
-        }
+        await ProcessWithHandlersAsync(
+          eventTrigger,
+          topics,
+          handlers);
+      }
+      catch (Exception exception)
+      {
+        _logger.LogError(exception, "Error processing job");
+        throw;
+      }
     }
+    private static void LogExecution(IJobExecutionContext context)
+    {
+      var jobKey = context.JobDetail.Key;
+
+      if (context.Recovering)
+      {
+        Log.Error(
+          "RECOVERING missed job execution for: {JobKey} at {RecoveryTime}",
+          jobKey,
+          DateTimeOffset.Now);
+        return;
+      }
+
+      Log.Error(
+        "Normal job execution for: {JobKey} at {ExecutionTime}",
+        jobKey,
+        DateTimeOffset.Now);
+    }
+    private static JobExecutionData ExtractJobData(JobDataMap data)
+    {
+      var scheduleId = ParseScheduleId(data);
+      var eventType = ParseEventType(data);
+
+      return new JobExecutionData(
+        scheduleId,
+        eventType,
+        data.GetString("topics") ?? "[]");
+    }
+    private static Guid ParseScheduleId(JobDataMap data)
+    {
+      var raw = data.GetString("scheduleId");
+
+      if (!Guid.TryParse(raw, out var scheduleId))
+        throw new InvalidOperationException(
+          $"Invalid scheduleId: {raw}");
+
+      return scheduleId;
+    }
+
+    private static ScheduleEventType ParseEventType(JobDataMap data)
+    {
+      var raw = data.GetString("eventType");
+
+      if (!Enum.TryParse<ScheduleEventType>(raw, out var eventType))
+        throw new InvalidOperationException(
+          $"Invalid event type: {raw}");
+
+      return eventType;
+    }
+    private static List<Resources> ParseTopics(string topicsJson)
+    {
+      var topicStrings =
+        JsonConvert.DeserializeObject<List<string>>(topicsJson) ??
+        new List<string>();
+
+      var topics = new List<Resources>();
+
+      foreach (var topic in topicStrings)
+      {
+        if (Enum.TryParse<Resources>(topic, out var resource))
+        {
+          topics.Add(resource);
+        }
+      }
+
+      return topics;
+    }
+    private IReadOnlyList<ITopicAwareJobHandler> GetInterestedHandlers(
+      IReadOnlyCollection<Resources> topics)
+    {
+      var handlers =
+        _serviceProvider.GetServices<ITopicAwareJobHandler>();
+
+      return handlers
+        .Where(topicAwareJobHandler =>
+          topics.Any(resources => topicAwareJobHandler.InterestedTopics.Contains(resources)))
+        .ToList();
+    }
+    private sealed record JobExecutionData(
+      Guid ScheduleId,
+      ScheduleEventType EventType,
+      string TopicsJson);
+
     private async Task ProcessWithHandlersAsync(
-        ScheduleEventTrigger eventTrigger, 
-        List<Resources> topics, 
+        ScheduleEventTrigger eventTrigger,
+        List<Resources> topics,
         List<ITopicAwareJobHandler> handlers)
     {
         if (!handlers.Any())
@@ -100,25 +148,25 @@ public class TopicDispatcherJob : IJob
             return;
         }
 
-        _logger.LogInformation("Processing {TopicCount} topics with {HandlerCount} handlers", 
+        _logger.LogInformation("Processing {TopicCount} topics with {HandlerCount} handlers",
             topics.Count, handlers.Count);
 
         // Process each topic with all interested handlers
         foreach (var topic in topics)
         {
-            var topicHandlers = handlers.Where(h => h.InterestedTopics.Contains(topic)).ToList();
-        
+            var topicHandlers = handlers.Where(topicAwareJobHandler => topicAwareJobHandler.InterestedTopics.Contains(topic)).ToList();
+
             foreach (var handler in topicHandlers)
             {
                 try
                 {
                     await handler.HandleAsync(eventTrigger, topic);
-                    _logger.LogDebug("Handler {HandlerType} processed topic {Topic} successfully", 
+                    _logger.LogDebug("Handler {HandlerType} processed topic {Topic} successfully",
                         handler.GetType().Name, topic);
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
-                    _logger.LogError(ex, "Handler {HandlerType} failed to process topic {Topic}", 
+                    _logger.LogError(exception, "Handler {HandlerType} failed to process topic {Topic}",
                         handler.GetType().Name, topic);
                 }
             }

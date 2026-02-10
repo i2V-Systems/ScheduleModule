@@ -23,7 +23,7 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     public ScheduleTypeInfo SupportedType => new(ScheduleType.Weekly, name: "Weekly Schedule", description: "Executes tasks on specific days of the week");
-    
+
     public override bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Weekly;
 
     public override async Task<ScheduleResult> ScheduleJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
@@ -42,22 +42,22 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
                 _ => ScheduleResult.Failure($"Unsupported weekly sub-type: {schedule.SubType}")
             };
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error in weekly schedule strategy for schedule {ScheduleId}", schedule.Id);
-            return ScheduleResult.Failure("Error in weekly schedule strategy", ex);
+            _logger.LogError(exception, "Error in weekly schedule strategy for schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Error in weekly schedule strategy", exception);
         }
     }
     /// <summary>
     /// Handles scheduling for selected days using cron expressions.
     /// </summary>
      private async Task<ScheduleResult> ScheduleSelectedDaysAsync(
-        ScheduleDto schedule, 
-        IReadOnlyList<Resources> topics, 
-        IUnifiedScheduler scheduler, 
+        ScheduleDto schedule,
+        IReadOnlyList<Resources> topics,
+        IUnifiedScheduler scheduler,
         CancellationToken cancellationToken)
     {
-        
+
         var startTime = TimeOnly.FromDateTime(schedule.StartDateTime);
         var startCron = CronExpressionBuilder.BuildCronExpression(schedule.StartDays, schedule.StartDateTime);
 
@@ -65,12 +65,14 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         {
             var endTime = TimeOnly.FromDateTime(schedule.EndDateTime.Value);
             var endCron = CronExpressionBuilder.BuildCronExpression(schedule.StartDays, schedule.EndDateTime.Value);
+            ScheduleWindow startWindow = new ScheduleWindow(startTime,startCron);
+            ScheduleWindow endWindow = new ScheduleWindow(endTime,endCron);
             return await ScheduleStartAndEndAsync(
                 topics,
                 scheduler.ScheduleSelectedDaysAsync,
                 schedule.Id,
-                startTime, startCron,
-                endTime, endCron,
+                startWindow,
+                endWindow,
                 cancellationToken);
         }
         else
@@ -78,12 +80,12 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
             // Only start/once event
             var trigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Once);
             var result = await scheduler.ScheduleSelectedDaysAsync(topics, trigger, startTime, startCron, cancellationToken);
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? ScheduleResult.Success(result.ScheduledJobIds)
                 : result;
         }
     }
-    
+
     /// <summary>
     /// Generic method to schedule start & end events for weekday/weekend etc.
     /// </summary>
@@ -98,13 +100,14 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         if (schedule.EndDateTime.HasValue)
         {
             var endTime = TimeOnly.FromDateTime(schedule.EndDateTime.Value);
-
+            ScheduleWindow startWindow = new ScheduleWindow(startTime,null);
+            ScheduleWindow endWindow = new ScheduleWindow(endTime,null);
             return await ScheduleStartAndEndAsync(
                 topics,
-                async (t, trigger, time, _, ct) => await scheduleFunc(t, trigger, time, ct),
+                async (readOnlyList, trigger, time, _, ct) => await scheduleFunc(readOnlyList, trigger, time, ct),
                 schedule.Id,
-                startTime, null,
-                endTime, null,
+                startWindow,
+                endWindow,
                 cancellationToken);
         }
         else
@@ -112,7 +115,7 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
             // Only start/once event
             var trigger = new ScheduleEventTrigger(schedule.Id, ScheduleEventType.Once);
             var result = await scheduleFunc(topics, trigger, startTime, cancellationToken);
-            return result.IsSuccess 
+            return result.IsSuccess
                 ? ScheduleResult.Success(result.ScheduledJobIds)
                 : result;
         }
@@ -124,24 +127,29 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         IReadOnlyList<Resources> topics,
         Func<IReadOnlyList<Resources>, ScheduleEventTrigger, TimeOnly, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
         Guid scheduleId,
-        TimeOnly startTime, string? startCron,
-        TimeOnly endTime, string? endCron,
+        ScheduleWindow startWindow,
+        ScheduleWindow endWindow,
         CancellationToken cancellationToken)
     {
         var allJobIds = new List<string>();
 
         // Start event
         var startTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.Start);
-        var startResult = await scheduleFunc(topics, startTrigger, startTime, startCron, cancellationToken);
+        var startResult = await scheduleFunc(topics, startTrigger, startWindow.DateTime, startWindow.Cron, cancellationToken);
         if (!startResult.IsSuccess) return startResult;
         allJobIds.AddRange(startResult.ScheduledJobIds);
 
         // End event
         var endTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.End);
-        var endResult = await scheduleFunc(topics, endTrigger, endTime, endCron, cancellationToken);
+        var endResult = await scheduleFunc(topics, endTrigger, endWindow.DateTime, endWindow.Cron, cancellationToken);
         if (!endResult.IsSuccess) return endResult;
         allJobIds.AddRange(endResult.ScheduledJobIds);
 
         return ScheduleResult.Success(allJobIds);
     }
+
+    private sealed record ScheduleWindow(
+      TimeOnly DateTime,
+      string? Cron);
+
 }

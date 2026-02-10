@@ -7,6 +7,7 @@ using Scheduling.Contracts.AttachedResources.Enums;
 using Serilog;
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Scheduling.Contracts.Schedule.DTOs;
 
 namespace Application.AttachedResources;
@@ -16,7 +17,6 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
     private bool _initialized = false;
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private Guid userId;
     public static ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
     public event EventHandler<ScheduleResourceDto> ScheduleResourcePublish;
@@ -28,14 +28,16 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         // InitializeAsync();
-        _httpContextAccessor = httpContextAccessor;
+
+        IHttpContextAccessor    _httpContextAccessor = httpContextAccessor;
         var httpContext = _httpContextAccessor.HttpContext;
         if (
             httpContext != null
-            && httpContext.Request.Headers.TryGetValue("Userid", out var userid)
+            && httpContext.Request.Headers.TryGetValue("Userid", out StringValues userid)
         )
         {
-            userId = new Guid(userid);
+
+            userId = new Guid(userid.ToString() );
         }
     }
 
@@ -48,9 +50,9 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
             await LoadScheduleResourceMapping();
             _initialized = true;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Log.Error("Exception in initialised schedules");
+            Log.Error("Exception in initialised schedules :" + exception.Message, exception);
         }
     }
 
@@ -65,7 +67,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
      public List<ScheduleResourceDto> GetResourcesByScheduleId(Guid scheduleId)
      {
          return ScheduleResourcesMap.Values
-             .Where(r => r.ScheduleId == scheduleId)
+             .Where(scheduleResourceDto => scheduleResourceDto.ScheduleId == scheduleId)
              .ToList();
      }
 
@@ -109,17 +111,17 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                     ScheduleResourcesMap.TryAdd(map.Id, map);
                 }
             }
-            catch(Exception ex)
+            catch(Exception exception)
             {
-                Log.Error("[ScheduleManager][LoadScheduleResourceMapping] : {Message}", ex.Message);
+                Log.Error("[ScheduleManager][LoadScheduleResourceMapping] : {Message}", exception.Message);
             }
         }
 
         public void RemoveFromMemorywithScheduleId(Guid scheduleId)
         {
             var mappingIds=ScheduleResourcesMap
-                .Where(s=>s.Value.ScheduleId==scheduleId)
-                .Select(s=>s.Key)
+                .Where(keyValuePair=>keyValuePair.Value.ScheduleId==scheduleId)
+                .Select(keyValuePair=>keyValuePair.Key)
                 .ToList();
             foreach (var mapId in mappingIds)
             {
@@ -140,10 +142,10 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 var dto= await crudService.AddResourceMappingAsync(map,userId);
                 ScheduleResourcesMap.TryAdd(dto.Id , dto);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
 
-                Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
+                Log.Error("Error in ResourceManager AddScheduleResourceMap ",exception.Message);
             }
         }
 
@@ -155,11 +157,19 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
                 ScheduleResourcesMap.TryGetValue(map.Id , out var oldMap);
                 var dto= await crudService.UpdateResourceMappingAsync(map,userId);
-                ScheduleResourcesMap.TryUpdate(map.Id , dto,oldMap);
+                if (oldMap is not null)
+                {
+                  ScheduleResourcesMap.TryUpdate(map.Id , dto,oldMap);
+
+                }
+                else
+                {
+                  throw new  NullReferenceException("oldMap is null" );
+                }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
+                Log.Error("Error in ResourceManager AddScheduleResourceMap ",exception.Message);
             }
         }
         public async Task<Guid> DeleteScheduleResourceMap(Guid id,bool Notify = false)
@@ -172,7 +182,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 await crudService.DeleteResourceMappingAsync(id,userId);
 
                 var mapEntry = ScheduleResourcesMap
-                    .FirstOrDefault(m => m.Value.Id == id);
+                    .FirstOrDefault(keyValuePair => keyValuePair.Value.Id == id);
 
                 if (mapEntry.Equals(default(KeyValuePair<Guid, ScheduleResourceDto>)))
                 {
@@ -196,9 +206,9 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                     return Guid.Empty;
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error(ex, "Error deleting resource mapping with Id {Id}", id);
+                Log.Error(exception, "Error deleting resource mapping with Id {Id}", id);
                 return Guid.Empty;
             }
         }
@@ -214,8 +224,8 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 {
                     await crudService.DeleteResourceMappingAsync(id, userId);
                     List<Guid>mappingIds=  ScheduleResourcesMap
-                        .Where(s => s.Key == id)
-                        .Select(t => t.Key).ToList();
+                        .Where(keyValuePair => keyValuePair.Key == id)
+                        .Select(keyValuePair => keyValuePair.Key).ToList();
                     foreach (var mapId in mappingIds)
                     {
                         ScheduleResourcesMap.TryRemove(mapId, out var map);
@@ -223,9 +233,9 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
 
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
+                Log.Error("Error in ResourceManager AddScheduleResourceMap ",exception.Message);
 
             }
             return scheduleAllDetails;

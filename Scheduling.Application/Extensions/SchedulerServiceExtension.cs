@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Application.Schedule.ScheduleEvent.Scheduler;
 using Coravel;
@@ -30,26 +31,28 @@ public static class SchedulerServiceExtensions
     }
     private static IServiceCollection AaddQuartzScheduler(this IServiceCollection services,IConfiguration configuration)
     {
-        
-        services.AddQuartz(q =>
+
+        services.AddQuartz(serviceCollectionQuartzConfigurator =>
         {
-            q.UseMicrosoftDependencyInjectionJobFactory();
+            serviceCollectionQuartzConfigurator.UseMicrosoftDependencyInjectionJobFactory();
             // Add scheduler identity for clustering
-            q.SchedulerId = "MyScheduler";
-            q.SchedulerName = "MyQuartzScheduler";
-            
+            serviceCollectionQuartzConfigurator.SchedulerId = "MyScheduler";
+            serviceCollectionQuartzConfigurator.SchedulerName = "MyQuartzScheduler";
+            var connectionString = configuration.GetConnectionString("analytic");
+
             // Use persistent job store
-            q.UsePersistentStore(s =>
+            serviceCollectionQuartzConfigurator.UsePersistentStore(persistentStoreOptions =>
             {
-                s.RetryInterval = TimeSpan.FromSeconds(15);
-                s.UsePostgres(cfg =>
+                persistentStoreOptions.RetryInterval = TimeSpan.FromSeconds(15);
+
+                persistentStoreOptions.UsePostgres(cfg =>
                     {
-                        cfg.ConnectionString = configuration.GetConnectionString("analytic");
+                      cfg.ConnectionString = connectionString ?? throw new InvalidOperationException("ConnectionString is null");
                         cfg.TablePrefix = "scheduler.qrtz_";
                     },
                     dataSourceName: "schedulers");
-                s.UseNewtonsoftJsonSerializer();
-                s.PerformSchemaValidation = false;
+                persistentStoreOptions.UseNewtonsoftJsonSerializer();
+                persistentStoreOptions.PerformSchemaValidation = false;
                 // s.UseClustering(c =>
                 // {
                 //     c.CheckinInterval = TimeSpan.FromSeconds(20);
@@ -57,14 +60,14 @@ public static class SchedulerServiceExtensions
                 // });
             });
             // Set misfire threshold
-            q.MisfireThreshold=TimeSpan.FromSeconds(30);
+            serviceCollectionQuartzConfigurator.MisfireThreshold=TimeSpan.FromSeconds(30);
         });
         // Add Quartz.NET as a hosted service
         services.AddQuartzHostedService(options =>
         {
             options.WaitForJobsToComplete = true;
         });
-        
+
         services.AddSingleton<IUnifiedScheduler, QuartzUnifiedScheduler>();
         return services;
     }
