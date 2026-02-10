@@ -193,9 +193,7 @@ namespace Application.Schedule.ScheduleObj
           }
         }
 
-        public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(
-            string userName
-        )
+        public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails()
         {
             try
             {

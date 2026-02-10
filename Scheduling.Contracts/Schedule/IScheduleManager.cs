@@ -33,7 +33,7 @@ public interface IScheduleManager
           CrudMethodType methodType);
 
         // Complex queries
-        Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(string userName);
+        Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails();
         IEnumerable<ScheduleDto> GetAllSchedules();
 
         // Memory management operations
