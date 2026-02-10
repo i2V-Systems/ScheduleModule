@@ -1,5 +1,6 @@
 ﻿using CommonUtilityModule.CrudUtilities;
 using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
@@ -13,6 +14,7 @@ namespace Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public  class SchedulingController : ControllerBase
     {
         private readonly IScheduledEntitiesManager _scheduledEntitiesManager;
@@ -43,10 +45,10 @@ namespace Presentation.Controllers
                 HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
                 return Ok(await  _scheduleManager.GetScheduleWithAllDetails(userName!));
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error(ex.Message);
-                return BadRequest(ex.Message);
+                Log.Error(exception.Message);
+                return BadRequest(exception.Message);
             }
         }
 
@@ -63,12 +65,14 @@ namespace Presentation.Controllers
                 {
                     return NotFound();
                 }
-                return Ok( _scheduleManager.Get(id));
+
+                ScheduleDto scheduleDto = _scheduleManager.Get(id);
+                return Ok(scheduleDto );
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(ex.Message);
+                Log.Error(exception, exception.Message);
+                return BadRequest(exception.Message);
             }
         }
 
@@ -96,10 +100,10 @@ namespace Presentation.Controllers
                 ScheduleAllDetails scheduleAllDetails = await _scheduleManager.CreateScheduleAsync(schedule.schedules, userid!);
                 return Ok(scheduleAllDetails.schedules);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(ex.Message);
+                Log.Error(exception, exception.Message);
+                return BadRequest(exception.Message);
             }
         }
 
@@ -126,10 +130,10 @@ namespace Presentation.Controllers
 
                 return Ok(scheduleAllDetails);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(ex.Message);
+                Log.Error(exception, exception.Message);
+                return BadRequest(exception.Message);
             }
         }
 
@@ -148,15 +152,15 @@ namespace Presentation.Controllers
 
                 return Ok(scheduleWithAllDetails);
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (DbUpdateConcurrencyException dbUpdateConcurrencyException)
             {
-                Log.Error(ex, ex.Message);
+                Log.Error(dbUpdateConcurrencyException, dbUpdateConcurrencyException.Message);
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Log.Error(ex, ex.Message);
-                return BadRequest(ex.Message);
+                Log.Error(exception, exception.Message);
+                return BadRequest(exception.Message);
             }
         }
 
@@ -194,14 +198,20 @@ namespace Presentation.Controllers
                 await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
 
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
+                if (schedule != null)
+                {
+                  ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
 
-                return Ok(scheduleAllDetails);
+                  return Ok(scheduleAllDetails);
+                }
+
+                  throw new NullReferenceException("Schedule not found");
+
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Log.Error("error in SchedulingController AttachSchedule",e.Message);
-                return BadRequest(e.Message);
+                Log.Error("error in SchedulingController AttachSchedule",exception.Message);
+                return BadRequest(exception.Message);
             }
         }
 
@@ -214,13 +224,19 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.DeleteMultipleScheduleResourceMap(data.Ids,data.Schedule);
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
+                if (schedule != null)
+                {
+                  ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
 
-                return Ok(scheduleAllDetails);
+                  return Ok(scheduleAllDetails);
+                }
+
+                  throw new NullReferenceException("Schedule not found");
+
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Log.Error("error in SchedulingController AttachSchedule",e.Message);
+                Log.Error("error in SchedulingController AttachSchedule",exception.Message);
                 throw;
             }
         }
@@ -258,9 +274,9 @@ namespace Presentation.Controllers
 
                 return Ok();
             }
-            catch(Exception e)
+            catch(Exception exception)
             {
-                Log.Error(e.Message,"error in SchedulingController [DeleteResources]");
+                Log.Error(exception.Message,"error in SchedulingController [DeleteResources]");
                 throw;
             }
 
@@ -273,13 +289,19 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule);
+                if (schedule != null)
+                {
+                  ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule);
 
-                return Ok(scheduleAllDetails.schedules);
+                  return Ok(scheduleAllDetails.schedules);
+                }
+
+                  throw new NullReferenceException("Schedule not found");
+
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Log.Error(e.Message,"error in SchedulingController [CreateResource]");
+                Log.Error(exception.Message,"error in SchedulingController [CreateResource]");
                 throw;
             }
         }
@@ -291,13 +313,19 @@ namespace Presentation.Controllers
             {
                 await _scheduledEntitiesManager.UpdateScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(schedule);
+                if (schedule != null)
+                {
+                  ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(schedule);
 
-                return Ok(scheduleAllDetails);
+                  return Ok(scheduleAllDetails);
+                }
+
+                  throw new NullReferenceException("Schedule not found");
+
             }
-            catch (Exception e)
+            catch (Exception exception)
             {
-                Log.Error(e.Message,"error in SchedulingController [UpdateResource]");
+                Log.Error(exception.Message,"error in SchedulingController [UpdateResource]");
                 throw;
             }
         }
@@ -311,9 +339,9 @@ namespace Presentation.Controllers
 
             return Ok(affectedSchedules);
           }
-          catch (Exception e)
+          catch (Exception exception)
           {
-            Log.Error(e.Message,"error in SchedulingController [UpdateResource]");
+            Log.Error(exception.Message,"error in SchedulingController [UpdateResource]");
             throw;
           }
         }

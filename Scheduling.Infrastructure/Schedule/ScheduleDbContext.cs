@@ -32,21 +32,23 @@ namespace Infrastructure.Schedule
             //     .HasConversion(
             //         new EnumToStringConverter<ScheduleSubType>()
             //     );
-            
+
             // modelBuilder.Entity<Domain.Schedule.Schedule>()
             //     .Property(e => e.Status)
             //     .HasConversion(new EnumToStringConverter<ScheduleStatus>());
-            
+
             modelBuilder.Entity<Domain.Schedule.Schedule>()
-                .Property(e => e.StartDays)
+                .Property(schedule => schedule.StartDays)
                 .HasConversion(
-                    v => JsonConvert.SerializeObject(v ?? new List<Days>()),
-                    v => string.IsNullOrEmpty(v) ? new List<Days>() : JsonConvert.DeserializeObject<List<Days>>(v) ?? new List<Days>()
+                    value => JsonConvert.SerializeObject(value ?? new List<Days>()),
+                    value => string.IsNullOrEmpty(value) ? new List<Days>() : JsonConvert.DeserializeObject<List<Days>>(value) ?? new List<Days>()
                 );
+
+            EnumToStringConverter<Resources> enumToStringConverter = new EnumToStringConverter<Resources>();
             modelBuilder.Entity<ScheduleResourceMapping>()
-                .Property(e => e.ResourceType)
-                .HasConversion(new EnumToStringConverter<Resources>());
-            
+                .Property(scheduleResourceMapping => scheduleResourceMapping.ResourceType)
+                .HasConversion(enumToStringConverter);
+
             modelBuilder
                 .Entity<ScheduleResourceMapping>()
                 .HasKey(pvs =>   pvs.Id);

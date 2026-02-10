@@ -20,16 +20,18 @@ public static class InfrastructureDependencyInjection
         IConfiguration configuration,
         MapperConfigurationExpression config)
     {
-        config.AddProfile(new MappingProfile());
+      MappingProfile mappingProfile = new MappingProfile();
+        config.AddProfile(mappingProfile);
         // Database Context
         services.AddDbContext<ScheduleDbContext>(options =>
         {
+          string? ConnectionString = configuration.GetConnectionString("analytic");
             options.UseNpgsql(
-                    configuration.GetConnectionString("analytic"),
-                    b =>
+                ConnectionString,
+                    npgsqlDbContextOptionsBuilder =>
                     {
-                        b.MigrationsAssembly("DataLayer");
-                        b.UseVector();
+                        npgsqlDbContextOptionsBuilder.MigrationsAssembly("DataLayer");
+                        npgsqlDbContextOptionsBuilder.UseVector();
                     })
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .EnableSensitiveDataLogging();

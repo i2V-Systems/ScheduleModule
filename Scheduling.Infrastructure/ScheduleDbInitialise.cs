@@ -13,8 +13,9 @@ public static class ScheduleDbInitialise
     {
       var path = "";
 #if DEBUG
+      var currentDirectory = Directory.GetCurrentDirectory();
       path = System.IO.Path.Combine(
-        System.IO.Directory.GetCurrentDirectory(),
+        currentDirectory,
         "../ScheduleModule/Scheduling.Infrastructure",
         "ScheduleScripts",
         scriptPath
@@ -24,7 +25,8 @@ public static class ScheduleDbInitialise
 #endif
 
       string script = File.ReadAllText(path);
-      using (connection = new NpgsqlConnection(configuration.GetConnectionString("analytic")))
+      string? connectionString = configuration.GetConnectionString("analytic");
+      using (connection = new NpgsqlConnection(connectionString))
       {
         connection.Open();
         using (var command = new NpgsqlCommand(script, connection))
@@ -34,9 +36,9 @@ public static class ScheduleDbInitialise
         }
       }
     }
-    catch (Exception ex)
+    catch (Exception exception)
     {
-      Log.Error("Error in schedule Db Initialise:{0}", ex.Message);
+      Log.Error("Error in schedule Db Initialise:{0}", exception.Message);
     }
     finally
     {
