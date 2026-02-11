@@ -132,6 +132,7 @@ namespace Application.Schedule.ScheduleObj
             ScheduleDetailsMap.Clear();
 
             // Reload from database
+            _initialized = false;
             await InitializeAsync();
         }
 
@@ -158,7 +159,7 @@ namespace Application.Schedule.ScheduleObj
             return scheduleAllDetails;
         }
 
-        private async Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,CrudMethodType methodType)
+        public async Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,CrudMethodType methodType)
         {
           var objectToSend = GetAllDetailNotificationObj(scheduleAllDetails );
           await _notificationManager.SendCrudDataToClientAsync(
@@ -192,9 +193,7 @@ namespace Application.Schedule.ScheduleObj
           }
         }
 
-        public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(
-            string userName
-        )
+        public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails()
         {
             try
             {

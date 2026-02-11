@@ -22,6 +22,6 @@ public interface IScheduledEntitiesManager
     public Task UpdateScheduleResourceMap(ScheduleResourceDto map);
     public Task<Guid> DeleteScheduleResourceMap(Guid id,bool Notify=false);
     public Task<ScheduleAllDetails> DeleteMultipleScheduleResourceMap(List<Guid> id,ScheduleAllDetails scheduleAllDetails);
-
-
+    public Task DeleteMultipleResources(List<DetachScheduleResourceDto> resources);
 }
+
