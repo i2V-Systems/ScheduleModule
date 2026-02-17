@@ -199,9 +199,7 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
-                var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
+                var scheduleAllDetails = await _scheduleManager.CreateResourceMapping(resourceDto);
                 return Ok(scheduleAllDetails);
             }
             catch (Exception e)
@@ -216,12 +214,7 @@ namespace Presentation.Controllers
         {
           try
           {
-            //TODO use notification manager for crud event from schedule manager internally
-            await _scheduledEntitiesManager.DeleteMultipleResources(resourceDto);
-            await _scheduledEntitiesManager.RefreshCacheAsync();
-            await _scheduleManager.RefreshCacheAsync();
-            IEnumerable<ScheduleAllDetails> updatedSchedule  = await _scheduleManager.GetScheduleWithAllDetails();
-            await _scheduleManager.SendClientNotificationWithSchedule( updatedSchedule.ToList() , CrudMethodType.Update);
+            await _scheduleManager.DeleteAttachedResources(resourceDto);
             return Ok();
           }
           catch (Exception e)
