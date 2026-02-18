@@ -92,6 +92,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
         ScheduleResourcesMap.Clear();
 
         // Reload from database
+        _initialized = false;
         await InitializeAsync();
     }
 
@@ -201,6 +202,27 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 Log.Error(ex, "Error deleting resource mapping with Id {Id}", id);
                 return Guid.Empty;
             }
+        }
+
+        public async Task DeleteMultipleResources(List<DetachScheduleResourceDto> resources)
+        {
+          try
+          {
+            using var scope = _serviceProvider.CreateScope();
+            var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+            foreach (var mapping in resources)
+            {
+              Guid mappingId = await crudService.DeleteResourceSchdeuleMappingAsync(mapping,userId);
+              ScheduleResourcesMap.TryRemove(mappingId, out var map);
+            }
+
+          }
+          catch (Exception ex)
+          {
+            Log.Error("Error in ResourceManager DeleteMultipleResources : ",ex.Message);
+
+          }
+
         }
 
         public async Task<ScheduleAllDetails> DeleteMultipleScheduleResourceMap(List<Guid> ids,ScheduleAllDetails scheduleAllDetails)
