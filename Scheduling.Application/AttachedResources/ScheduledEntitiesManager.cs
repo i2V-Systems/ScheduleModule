@@ -189,6 +189,16 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                         ScheduleResourcePublish?.Invoke(this, removedMap);
                     }
 
+                    // Notify detach handlers to update resource state (e.g. restore LoginWindow for users)
+                    if (removedMap != null)
+                    {
+                        var detachHandlers = scope.ServiceProvider.GetServices<IResourceDetachHandler>();
+                        foreach (var handler in detachHandlers.Where(h => h.ResourceType == removedMap.ResourceType))
+                        {
+                            await handler.OnDetachedAsync(removedMap);
+                        }
+                    }
+
                     return mapEntry.Value.ScheduleId;
                 }
                 else
