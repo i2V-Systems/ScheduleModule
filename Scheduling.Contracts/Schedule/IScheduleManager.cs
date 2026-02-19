@@ -48,6 +48,9 @@ public interface IScheduleManager
         Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids);
         Task UpdateMultipleSchedulesAsync(List<ScheduleAllDetails> schedules);
         Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule);
+        Task<ScheduleAllDetails> CreateResourceMapping(ScheduleResourceDto resourceMap);
+
+        Task DeleteAttachedResources(List<DetachScheduleResourceDto> resourceDto);
 
         // Cross-cutting concerns
 

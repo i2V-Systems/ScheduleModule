@@ -425,5 +425,22 @@ namespace Application.Schedule.ScheduleObj
             };
           return objectToSend;
         }
+
+        public async Task<ScheduleAllDetails> CreateResourceMapping(ScheduleResourceDto resourceDto)
+        {
+          await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
+          var schedule = GetDetailed(resourceDto.ScheduleId);
+          ScheduleAllDetails scheduleAllDetails = await UpdateInMemory(schedule.schedules);
+          return scheduleAllDetails;
+        }
+
+        public async Task DeleteAttachedResources(List<DetachScheduleResourceDto> resourceDto)
+        {
+          await _scheduledEntitiesManager.DeleteMultipleResources(resourceDto);
+          await _scheduledEntitiesManager.RefreshCacheAsync();
+          await RefreshCacheAsync();
+          IEnumerable<ScheduleAllDetails> updatedSchedule  = await GetScheduleWithAllDetails();
+          await SendClientNotificationWithSchedule( updatedSchedule.ToList() , CrudMethodType.Update);
+        }
     }
 }
