@@ -65,11 +65,6 @@ public static class ScheduleModuleRegistration
         //    "Scheduling.Presentation",
         //    "BusinessLayer");
 
-
-        services.AddControllers()
-            .AddApplicationPart(scheduleAssembly)
-            .AddControllersAsServices();
-
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssemblies(scheduleAssembly)
         );
