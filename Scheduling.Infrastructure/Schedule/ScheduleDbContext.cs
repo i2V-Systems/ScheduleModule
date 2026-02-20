@@ -21,6 +21,8 @@ namespace Infrastructure.Schedule
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasDefaultSchema(Schemas.Schedule);
+
             // modelBuilder.Entity<Domain.Schedule.Schedule>()
             //     .Property(e => e.Type)
             //     .HasConversion(

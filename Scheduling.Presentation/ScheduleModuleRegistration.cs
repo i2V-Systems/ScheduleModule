@@ -49,7 +49,6 @@ public static class ScheduleModuleRegistration
         services.AddApplicationServices(configuration);
 
         var scheduleAssembly = Assembly.Load("Scheduling.Presentation");
-        var businessAssembly = Assembly.Load("BusinessLayer");
 
         // Register services from both assemblies with interface support
         // Use the distinct method names to avoid ambiguity
