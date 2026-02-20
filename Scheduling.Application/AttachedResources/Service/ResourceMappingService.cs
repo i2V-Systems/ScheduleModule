@@ -20,21 +20,21 @@ public class ResourceMappingService :IScheduleResourceService
         _resourceRepository = scheduleResourceRepository;
         _mapper = mapper;
     }
-    
+
     public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto,Guid userId)
     {
         try
         {
             var resource = _mapper.Map<Domain.AttachedResources.ScheduleResourceMapping>(dto);
             await _resourceRepository.AddAsync(resource,userId);
-            
+
             _logger.LogInformation("mapping created with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
             return dto;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error adding resource mapping");
+            _logger.LogError(exception, "Error adding resource mapping");
             throw;
         }
     }
@@ -44,14 +44,14 @@ public class ResourceMappingService :IScheduleResourceService
         {
             var resource = _mapper.Map<ScheduleResourceMapping>(dto);
             _resourceRepository.Update(resource,userId);
-            
+
             _logger.LogInformation("mapping updated with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
             return dto;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error updating resource mapping");
+            _logger.LogError(exception, "Error updating resource mapping");
             throw;
         }
     }
@@ -60,12 +60,12 @@ public class ResourceMappingService :IScheduleResourceService
         try
         {
             var entities = await _resourceRepository.GetAllAsync();
-            var dtos = entities.Select(e =>  _mapper.Map<ScheduleResourceDto>(e));
+            var dtos = entities.Select(scheduleResourceMapping =>  _mapper.Map<ScheduleResourceDto>(scheduleResourceMapping));
             return dtos;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error getting resource mappings");
+            _logger.LogError(exception, "Error getting resource mappings");
             throw;
         }
     }
@@ -79,9 +79,9 @@ public class ResourceMappingService :IScheduleResourceService
                 _resourceRepository.Delete(entity,userId);
             }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error deleting resource mapping {MappingId}", mappingId);
+            _logger.LogError(exception, "Error deleting resource mapping {MappingId}", mappingId);
             throw;
         }
     }

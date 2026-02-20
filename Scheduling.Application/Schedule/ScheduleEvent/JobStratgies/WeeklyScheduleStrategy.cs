@@ -65,8 +65,8 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         {
             var endTime = TimeOnly.FromDateTime(schedule.EndDateTime.Value);
             var endCron = CronExpressionBuilder.BuildCronExpression(schedule.StartDays, schedule.EndDateTime.Value);
-            ScheduleWindow startWindow = new ScheduleWindow(startTime,startCron);
-            ScheduleWindow endWindow = new ScheduleWindow(endTime,endCron);
+            ScheduleWindowTimeOnly startWindow = new ScheduleWindowTimeOnly(startTime,startCron);
+            ScheduleWindowTimeOnly endWindow = new ScheduleWindowTimeOnly(endTime,endCron);
             return await ScheduleStartAndEndAsync(
                 topics,
                 scheduler.ScheduleSelectedDaysAsync,
@@ -100,8 +100,8 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         if (schedule.EndDateTime.HasValue)
         {
             var endTime = TimeOnly.FromDateTime(schedule.EndDateTime.Value);
-            ScheduleWindow startWindow = new ScheduleWindow(startTime,null);
-            ScheduleWindow endWindow = new ScheduleWindow(endTime,null);
+            ScheduleWindowTimeOnly startWindow = new ScheduleWindowTimeOnly(startTime,null);
+            ScheduleWindowTimeOnly endWindow = new ScheduleWindowTimeOnly(endTime,null);
             return await ScheduleStartAndEndAsync(
                 topics,
                 async (readOnlyList, trigger, time, _, ct) => await scheduleFunc(readOnlyList, trigger, time, ct),
@@ -127,8 +127,8 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         IReadOnlyList<Resources> topics,
         Func<IReadOnlyList<Resources>, ScheduleEventTrigger, TimeOnly, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
         Guid scheduleId,
-        ScheduleWindow startWindow,
-        ScheduleWindow endWindow,
+        ScheduleWindowTimeOnly startWindow,
+        ScheduleWindowTimeOnly endWindow,
         CancellationToken cancellationToken)
     {
         var allJobIds = new List<string>();
@@ -148,8 +148,6 @@ internal class WeeklyScheduleStrategy : BaseScheduleJobStrategy
         return ScheduleResult.Success(allJobIds);
     }
 
-    private sealed record ScheduleWindow(
-      TimeOnly DateTime,
-      string? Cron);
+
 
 }

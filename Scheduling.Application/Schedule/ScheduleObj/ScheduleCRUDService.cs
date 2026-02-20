@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Exceptions;
-using Domain.Schedule;
+using Domain.Scheduling;
 using Microsoft.Extensions.Logging;
 using Scheduling.Contracts.Schedule.DTOs;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
@@ -11,11 +11,11 @@ namespace Application.Schedule.ScheduleObj
     internal class ScheduleCrudService : IScheduleCRUDService
     {
         private readonly IMapper _mapper;
-        private IScheduleRepository<Domain.Schedule.Schedule> _schedulesRepository;
-     
+        private IScheduleRepository<Domain.Scheduling.Schedule> _schedulesRepository;
+
         private readonly ILogger<ScheduleCrudService> _logger;
         public ScheduleCrudService(IMapper mapper,
-           IScheduleRepository<Domain.Schedule.Schedule> scheduleRepository,ILogger<ScheduleCrudService> logger)
+           IScheduleRepository<Domain.Scheduling.Schedule> scheduleRepository,ILogger<ScheduleCrudService> logger)
         {
             _logger = logger?? throw new ArgumentNullException(nameof(logger));
             _schedulesRepository = scheduleRepository;
@@ -29,9 +29,9 @@ namespace Application.Schedule.ScheduleObj
                 var entity = await _schedulesRepository.GetAsync(id);
                 return _mapper.Map<ScheduleDto>(entity);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "Error getting schedule {ScheduleId}", id);
+                _logger.LogError(exception, "Error getting schedule {ScheduleId}", id);
                 throw;
             }
         }
@@ -41,11 +41,11 @@ namespace Application.Schedule.ScheduleObj
             try
             {
                 var entities = await _schedulesRepository.GetAllAsync();
-                return entities.Select(e => _mapper.Map<ScheduleDto>(e));
+                return entities.Select(schedule => _mapper.Map<ScheduleDto>(schedule));
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "Error getting all schedules");
+                _logger.LogError(exception, "Error getting all schedules");
                 throw;
             }
         }
@@ -54,11 +54,11 @@ namespace Application.Schedule.ScheduleObj
             try
             {
                 var entities = await _schedulesRepository.FindAsync(schedule =>schedule.Id==id);
-                return entities != null ? true : false;
+                return entities != null ;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "Error getting all schedules");
+                _logger.LogError(exception, "Error getting all schedules");
                 throw;
             }
         }
@@ -69,20 +69,20 @@ namespace Application.Schedule.ScheduleObj
             {
                 _logger.LogInformation("Creating schedule {ScheduleName} by {UserName}", dto.Name, userName);
 
-                var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
+                var schedule = _mapper.Map<Domain.Scheduling.Schedule>(dto);
                 await _schedulesRepository.AddAsync(schedule,userId);
 
                 _logger.LogInformation("Schedule created with ID {ScheduleId}", schedule.Id);
                 dto= _mapper.Map<ScheduleDto>(schedule);
                 return dto;
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "Error creating schedule {ScheduleName}", dto.Name);
+                _logger.LogError(exception, "Error creating schedule {ScheduleName}", dto.Name);
                 throw;
             }
         }
-        
+
         public async Task DeleteAsync(Guid entityId,Guid userId, string userName = "")
         {
                try
@@ -97,9 +97,9 @@ namespace Application.Schedule.ScheduleObj
 
                 _logger.LogInformation("Schedule {ScheduleId} deleted successfully", entityId);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "Error deleting schedule {ScheduleId}", entityId);
+                _logger.LogError(exception, "Error deleting schedule {ScheduleId}", entityId);
                 throw;
             }
         }
@@ -114,18 +114,18 @@ namespace Application.Schedule.ScheduleObj
                     throw new NotFoundException($"Schedule with ID {dto.Id} not found");
 
                 // Update domain entity from DTO
-                var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
+                var schedule = _mapper.Map<Domain.Scheduling.Schedule>(dto);
                 _schedulesRepository.Update(schedule,userId);
 
                 _logger.LogInformation("Schedule {ScheduleId} updated successfully", dto.Id);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _logger.LogError(ex, "Error updating schedule {ScheduleId}", dto.Id);
+                _logger.LogError(exception, "Error updating schedule {ScheduleId}", dto.Id);
                 throw;
             }
         }
     }
-    
-    
+
+
 }

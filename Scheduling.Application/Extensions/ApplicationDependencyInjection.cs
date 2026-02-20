@@ -9,7 +9,7 @@ using Application.Schedule.ScheduleEvent.ScheduleDispatcher;
 using Application.Schedule.ScheduleEvent.Validator;
 using Application.Schedule.ScheduleObj;
 using Domain.AttachedResources;
-using Domain.Schedule;
+using Domain.Scheduling;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Scheduling.Contracts.AttachedResources;
@@ -23,9 +23,9 @@ public static class ApplicationDependencyInjection
 {
     private static IServiceProvider ServiceProvider;
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration)
-    { 
-       
-     
+    {
+
+
        // Core Application Services
        services.AddTransient<IScheduleEventService,ScheduleEventService>();
        services.AddSingleton<IScheduledEntitiesManager, ScheduledEntitiesManager>();
@@ -36,22 +36,23 @@ public static class ApplicationDependencyInjection
        services.AddSingleton<IScheduleEventManager, ScheduleEventManager>();
        services.AddSingleton<IScheduleManager, ScheduleManager>();
        // services.AddHostedService<ScheduleInitializationService>();
-       
+
        services.AddSchedulingScheduler(configuration);
-       
+
        // Auto-register services with attributes (your current approach)
-       
+
         services.AddServicesOfType<IScopedService>();
         services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();
         services.AddServicesOfType<ITransientService>();
         services.AddServicesWithAttributeOfType<TransientServiceAttribute>();
         services.AddServicesOfType<ISingletonService>();
         services.AddServicesWithAttributeOfType<SingletonServiceAttribute>();
-
+        AssemblyName assemblyName=new AssemblyName("Scheduling.Application");
+   Assembly assembly = Assembly.Load(assemblyName);
         // MediatR
-        services.AddMediatR(cfg => 
+        services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(
-                Assembly.Load(new AssemblyName("Scheduling.Application")))
+              assembly)
             );
 
         return services;

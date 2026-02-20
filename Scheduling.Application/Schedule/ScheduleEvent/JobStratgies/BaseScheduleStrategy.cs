@@ -93,5 +93,7 @@ public abstract class BaseScheduleJobStrategy : IScheduleJobStrategy
     public sealed record ScheduleWindow(
       DateTime DateTime,
       string? Cron);
-
+    public sealed record ScheduleWindowTimeOnly(
+      TimeOnly DateTime,
+      string? Cron);
 }

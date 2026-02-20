@@ -2,7 +2,7 @@ using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule.DTOs;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
-namespace Domain.Schedule;
+namespace Domain.Scheduling;
 
 public interface IScheduleCRUDService
 { 

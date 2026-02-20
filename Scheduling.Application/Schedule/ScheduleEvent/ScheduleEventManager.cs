@@ -18,21 +18,21 @@ internal class ScheduleEventManager :IScheduleEventManager
 
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
-    
+
     private readonly  IScheduledEntitiesManager _scheduledEntitiesManager;
-    
-    public ScheduleEventManager(IServiceProvider serviceProvider,IConfiguration configuration,IScheduledEntitiesManager scheduledEntitiesManager)
+
+    public ScheduleEventManager(IServiceProvider serviceProvider,IScheduledEntitiesManager scheduledEntitiesManager)
     {
         _serviceProvider = serviceProvider;
         _scheduledEntitiesManager = scheduledEntitiesManager;
     }
- 
-    
+
+
     public   async Task ExecuteAsync(ScheduleDto schedule )
     {
         using var scope = _serviceProvider.CreateScope();
         var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
-        List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id).Select(s=>s.ResourceType).ToList();
+        List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id).Select(scheduleResourceDto=>scheduleResourceDto.ResourceType).ToList();
         await scheduleEventService.ExecuteAsync(schedule,resources);
     }
 
@@ -40,10 +40,10 @@ internal class ScheduleEventManager :IScheduleEventManager
     {
         using var scope = _serviceProvider.CreateScope();
         var scheduleEventService = scope.ServiceProvider.GetRequiredService<ScheduleEventService>();
-        
+
         List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(schedule.Id)
-            .Select(s=>s.ResourceType).ToList();
-        
+            .Select(scheduleResourceDto=>scheduleResourceDto.ResourceType).ToList();
+
         var scheduleExists= await scheduleEventService.ScheduleExistsAsync(schedule.Id);
         if (!scheduleExists)
         {
@@ -52,7 +52,7 @@ internal class ScheduleEventManager :IScheduleEventManager
         else
         {
             await scheduleEventService.UpdateAsync(schedule, resources);
-        
+
             // Handle enable/disable based on desired status
             if (schedule.Status == ScheduleStatus.Disabled)
             {
@@ -77,15 +77,15 @@ internal class ScheduleEventManager :IScheduleEventManager
             var scheduleEventService = _serviceProvider.GetRequiredService<ScheduleEventService>();
             schedules.Select(item =>
             {
-                List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(item.Value.Id).Select(s=>s.ResourceType).ToList();
+                List<Resources> resources = _scheduledEntitiesManager.GetResourcesByScheduleId(item.Value.Id).Select(scheduleResourceDto=>scheduleResourceDto.ResourceType).ToList();
                 return scheduleEventService.ExecuteAsync(item.Value, resources);
             });
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Log.Error(ex.Message);
+            Log.Error(exception.Message);
         }
-        
-      
+
+
     }
 }

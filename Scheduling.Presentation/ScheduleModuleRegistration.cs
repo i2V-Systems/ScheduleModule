@@ -43,7 +43,7 @@ public static class ScheduleModuleRegistration
 
     public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration,MapperConfigurationExpression config)
     {
-        services.AddContractServices(configuration);
+        services.AddContractServices();
         services.AddInfrastructureServices(configuration,config);
         services.AddApplicationServices(configuration);
 

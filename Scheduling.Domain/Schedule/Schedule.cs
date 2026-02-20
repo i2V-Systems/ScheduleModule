@@ -2,7 +2,7 @@ using Domain.Exceptions;
 using Scheduling.Contracts;
 using Scheduling.Contracts.Schedule.Enums;
 
-namespace Domain.Schedule;
+namespace Domain.Scheduling;
 
 public class Schedule : BaseEntity
 {
@@ -22,7 +22,7 @@ public class Schedule : BaseEntity
     {
         return TimeZoneInfo.ConvertTimeFromUtc(StartDateTime, TimeZoneInfo.Local);
     }
-    
+
     public DateTime? GetLocalEndTime()
     {
         return EndDateTime==null?TimeZoneInfo.ConvertTimeFromUtc(EndDateTime??new DateTime(), TimeZoneInfo.Local):null;
@@ -41,8 +41,8 @@ public class Schedule : BaseEntity
         {
             if (value.HasValue)
             {
-                _endDateTime = value.Value.Kind == DateTimeKind.Utc 
-                    ? value.Value 
+                _endDateTime = value.Value.Kind == DateTimeKind.Utc
+                    ? value.Value
                     : value.Value.ToUniversalTime();
             }
             else
@@ -51,10 +51,10 @@ public class Schedule : BaseEntity
             }
         }
     }
-        
+
     public string? StartCronExp { get; set; }
     public string? StopCronExp { get; set; }
-    
+
     public void ConvertToUTC()
     {
         StartDateTime = StartDateTime.ToUniversalTime();
@@ -66,65 +66,66 @@ public class Schedule : BaseEntity
         StartDays = new List<Days>();
 
     }
-   
 
-    public Schedule(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,
-        List<Days> startDays, ScheduleStatus enabled, DateTime startTime, DateTime endTime, DateTime? recurringTime)
-    {
-        ValidateSchedule(name, type, details, startTime, endTime);
-        Name = name;
-        Type = type;
-        SubType = subType;
-        StartDays = startDays;
-        NoOfDays = noOfdays;
-        Status = enabled;
-        Details = details;
-        StartDateTime = startTime;
-        EndDateTime = endTime;
-        RecurringTime = recurringTime;
-    }
-   
+
+    // public Schedule(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,
+    //     List<Days> startDays, ScheduleStatus enabled, DateTime startTime, DateTime endTime, DateTime? recurringTime)
+    // {
+    //     ValidateSchedule(name, type, details, startTime, endTime);
+    //     Name = name;
+    //     Type = type;
+    //     SubType = subType;
+    //     StartDays = startDays;
+    //     NoOfDays = noOfdays;
+    //     Status = enabled;
+    //     Details = details;
+    //     StartDateTime = startTime;
+    //     EndDateTime = endTime;
+    //     RecurringTime = recurringTime;
+    // }
+
     private static void ValidateSchedule(string name, ScheduleType type, string details,
         DateTime startTime, DateTime endTime)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("name cannot be empty.");
-        
+
         if (string.IsNullOrWhiteSpace(details))
             throw new DomainException("details cannot be empty.");
-        
+
         if (type < 0)
             throw new DomainException("type cannot be negative.");
-        
+
         if (startTime== default(DateTime))
             throw new DomainException("Start time cannot be empty.");
-        
+
         if (endTime== default(DateTime))
             throw new DomainException("End time cannot be empty.");
-        
+
     }
-    public void UpdateDetails(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,
-        List<Days> startDays, DateTime startTime, DateTime endTime,DateTime? recurringTime)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("name cannot be empty.");
-        
-        if (string.IsNullOrWhiteSpace(details))
-            throw new DomainException("details cannot be empty.");
-        
-        if (type <= 0)
-            throw new DomainException("Type must be positive.");
-        
-        Name = name;
-        Details = details;
-        Type = type;
-        SubType = subType;
-        NoOfDays = noOfdays;
-        StartDays = startDays;
-        StartDateTime = startTime;
-        EndDateTime = endTime;
-        RecurringTime = recurringTime;
-    }
+
+    // public void UpdateDetails(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,
+    //     List<Days> startDays, DateTime startTime, DateTime endTime,DateTime? recurringTime)
+    // {
+    //     if (string.IsNullOrWhiteSpace(name))
+    //         throw new DomainException("name cannot be empty.");
+    //
+    //     if (string.IsNullOrWhiteSpace(details))
+    //         throw new DomainException("details cannot be empty.");
+    //
+    //     if (type <= 0)
+    //         throw new DomainException("Type must be positive.");
+    //
+    //     Name = name;
+    //     Details = details;
+    //     Type = type;
+    //     SubType = subType;
+    //     NoOfDays = noOfdays;
+    //     StartDays = startDays;
+    //     StartDateTime = startTime;
+    //     EndDateTime = endTime;
+    //     RecurringTime = recurringTime;
+    // }
     public void UpdateStatus(ScheduleStatus state)
     {
         Status =state==ScheduleStatus.Enabled ? ScheduleStatus.Enabled : ScheduleStatus.Disabled;

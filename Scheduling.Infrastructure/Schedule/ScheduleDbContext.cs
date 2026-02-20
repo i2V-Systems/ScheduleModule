@@ -15,7 +15,7 @@ namespace Infrastructure.Schedule
         }
         //public DbSet<ActionData> ActionData { get; set; }
 
-        public DbSet<Domain.Schedule.Schedule> Schedule { get; set; }
+        public DbSet<Domain.Scheduling.Schedule> Schedule { get; set; }
         public DbSet<ScheduleResourceMapping> ScheduleResourceMapping { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,7 +37,7 @@ namespace Infrastructure.Schedule
             //     .Property(e => e.Status)
             //     .HasConversion(new EnumToStringConverter<ScheduleStatus>());
 
-            modelBuilder.Entity<Domain.Schedule.Schedule>()
+            modelBuilder.Entity<Domain.Scheduling.Schedule>()
                 .Property(schedule => schedule.StartDays)
                 .HasConversion(
                     value => JsonConvert.SerializeObject(value ?? new List<Days>()),

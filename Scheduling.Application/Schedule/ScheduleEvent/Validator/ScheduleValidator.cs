@@ -22,7 +22,12 @@ public class ScheduleValidator : IScheduleValidator
                 errors.Add("Start date must be before end date");
         }
 
-        return errors.Any() ? ValidationResult.Invalid(errors.ToArray()) : ValidationResult.Valid();
+        if (errors.Any())
+        {
+          var errorArray = errors.ToArray();
+          return ValidationResult.Invalid(errorArray);
+        }
+        return ValidationResult.Valid();
     }
 
     public ValidationResult ValidateTimeRange(DateTime currentTime, DateTime startTime, DateTime endTime)

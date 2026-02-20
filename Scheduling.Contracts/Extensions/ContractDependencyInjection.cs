@@ -13,13 +13,13 @@ namespace Scheduling.Contracts.Extensions;
 
 public static class ContractDependencyInjection
 {
-    public static IServiceCollection AddContractServices(this IServiceCollection services,IConfiguration configuration)
-    { 
+    public static IServiceCollection AddContractServices(this IServiceCollection services)
+    {
        // services.AddSingleton<IScheduleManager>();
        // services.AddSingleton<IResourceManager>();
        //
        //  // MediatR
-       //  services.AddMediatR(cfg => 
+       //  services.AddMediatR(cfg =>
        //      cfg.RegisterServicesFromAssembly(
        //          Assembly.Load(new AssemblyName("Scheduling.Contracts")))
        //      );

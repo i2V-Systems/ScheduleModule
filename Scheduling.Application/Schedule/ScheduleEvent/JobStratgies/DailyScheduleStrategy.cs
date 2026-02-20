@@ -22,38 +22,39 @@ internal class DailyScheduleStrategy : BaseScheduleJobStrategy
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-    
+
     public override  bool CanHandle(ScheduleType scheduleType) => scheduleType == ScheduleType.Daily;
 
     public override   async Task<ScheduleResult> ScheduleJobAsync(
-        ScheduleDto schedule, 
-        IReadOnlyList<Resources> topics, 
-        IUnifiedScheduler scheduler, 
+        ScheduleDto schedule,
+        IReadOnlyList<Resources> topics,
+        IUnifiedScheduler scheduler,
         CancellationToken cancellationToken = default)
     {
         if (schedule == null) throw new ArgumentNullException(nameof(schedule));
         if (topics == null) throw new ArgumentNullException(nameof(topics));
         if (scheduler == null) throw new ArgumentNullException(nameof(scheduler));
-        
+
         try
         {
-            // Currently unsupported sub-type
-            if (schedule.SubType == ScheduleSubType.Every)
-            {
-                _logger.LogWarning("Every N days logic not implemented for schedule {ScheduleId}", schedule.Id);
-                return ScheduleResult.Failure("Every N days logic not implemented");
-            }
-            var startTime = TimeOnly.FromDateTime(schedule.StartDateTime);
+          if (schedule.SubType == ScheduleSubType.Every)
+          {
+          return  ReturnFailure(schedule);
+          }
+
+          var startTime = TimeOnly.FromDateTime(schedule.StartDateTime);
 
             if (schedule.EndDateTime.HasValue)
             {
                 var endTime = TimeOnly.FromDateTime(schedule.EndDateTime.Value);
+                ScheduleWindowTimeOnly entryWindow  = new ScheduleWindowTimeOnly(startTime, null);
+                ScheduleWindowTimeOnly exitWindow  = new ScheduleWindowTimeOnly(endTime, null);
                 return await ScheduleStartAndEndAsync(
                     topics,
-                    async (t, trigger, time, _, ct) => await scheduler.ScheduleDailyAsync(t, trigger, time, ct),
+                    async (readOnlyList, trigger, time, _, ct) => await scheduler.ScheduleDailyAsync(readOnlyList, trigger, time, ct),
                     schedule.Id,
-                    startTime, null,
-                    endTime, null,
+                    entryWindow,
+                    exitWindow,
                     cancellationToken);
             }
             else
@@ -66,13 +67,20 @@ internal class DailyScheduleStrategy : BaseScheduleJobStrategy
                     : result;
             }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            _logger.LogError(ex, "Error in daily schedule strategy for schedule {ScheduleId}", schedule.Id);
-            return ScheduleResult.Failure("Error in daily schedule strategy", ex);
+            _logger.LogError(exception, "Error in daily schedule strategy for schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Error in daily schedule strategy", exception);
         }
     }
-    
+
+    private ScheduleResult ReturnFailure(ScheduleDto schedule)
+    {
+
+        _logger.LogWarning("Every N days logic not implemented for schedule {ScheduleId}", schedule.Id);
+        return ScheduleResult.Failure("Every N days logic not implemented");
+          }
+
     public override async Task<ScheduleResult> UpdateJobAsync(ScheduleDto schedule, IReadOnlyList<Resources> topics, IUnifiedScheduler scheduler, CancellationToken cancellationToken = default)
     {
         try
@@ -80,22 +88,22 @@ internal class DailyScheduleStrategy : BaseScheduleJobStrategy
             var result = await base.UpdateJobAsync(schedule, topics, scheduler, cancellationToken);
             if (result.IsSuccess)
             {
-                Log.Information("Successfully updated daily schedule {ScheduleId} for {TopicCount} topics", 
+                Log.Information("Successfully updated daily schedule {ScheduleId} for {TopicCount} topics",
                     schedule.Id, topics.Count);
             }
             return result;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Log.Error(ex, "Failed to update daily schedule {ScheduleId}", schedule.Id);
-            return ScheduleResult.Failure("Failed to update daily schedule", ex);
+            Log.Error(exception, "Failed to update daily schedule {ScheduleId}", schedule.Id);
+            return ScheduleResult.Failure("Failed to update daily schedule", exception);
         }
     }
-    
+
 
     // The delete, enable, and disable methods are inherited from the base class
-    
-    
+
+
     /// <summary>
     /// Generic method to schedule start & end events.
     /// </summary>
@@ -103,21 +111,21 @@ internal class DailyScheduleStrategy : BaseScheduleJobStrategy
         IReadOnlyList<Resources> topics,
         Func<IReadOnlyList<Resources>, ScheduleEventTrigger, TimeOnly, string?, CancellationToken, Task<ScheduleResult>> scheduleFunc,
         Guid scheduleId,
-        TimeOnly startTime, string? startCron,
-        TimeOnly endTime, string? endCron,
+        ScheduleWindowTimeOnly entryWindow,
+        ScheduleWindowTimeOnly exitWindow,
         CancellationToken cancellationToken)
     {
         var allJobIds = new List<string>();
 
         // Start event
         var startTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.Start);
-        var startResult = await scheduleFunc(topics, startTrigger, startTime, startCron, cancellationToken);
+        var startResult = await scheduleFunc(topics, startTrigger, entryWindow.DateTime, entryWindow.Cron, cancellationToken);
         if (!startResult.IsSuccess) return startResult;
         allJobIds.AddRange(startResult.ScheduledJobIds);
 
         // End event
         var endTrigger = new ScheduleEventTrigger(scheduleId, ScheduleEventType.End);
-        var endResult = await scheduleFunc(topics, endTrigger, endTime, endCron, cancellationToken);
+        var endResult = await scheduleFunc(topics, endTrigger, exitWindow.DateTime, exitWindow.Cron, cancellationToken);
         if (!endResult.IsSuccess) return endResult;
         allJobIds.AddRange(endResult.ScheduledJobIds);
 
