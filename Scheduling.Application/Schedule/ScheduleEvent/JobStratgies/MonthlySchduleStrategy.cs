@@ -74,10 +74,10 @@
 //             }
 //            return ScheduleResult.Success(allJobIds);
 //         }
-//         catch (Exception ex)
+//         catch (Exception exception)
 //         {
-//             _logger.LogError(ex, "Error in monthly schedule strategy for schedule {ScheduleId}", schedule.Id);
-//             return ScheduleResult.Failure("Error in monthly schedule strategy", ex);
+//             _logger.LogError(exception, "Error in monthly schedule strategy for schedule {ScheduleId}", schedule.Id);
+//             return ScheduleResult.Failure("Error in monthly schedule strategy", exception);
 //         }
 //     }
 // }
