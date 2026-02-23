@@ -85,4 +85,21 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
+
+    public async Task<Guid> DeleteResourceSchdeuleMappingAsync(DetachScheduleResourceDto mapping,Guid userId)
+    {
+      try
+      {
+        var entity = await _resourceRepository.FindAsync(item => item.ScheduleId == mapping.ScheduleId && item.ResourceId == mapping.ResourceId);
+        _resourceRepository.Delete(entity,userId);
+        return entity.Id;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error in DeleteResourceSchdeuleMappingAsync of ResourceMappingService");
+        throw;
+      }
+    }
+
+
 }

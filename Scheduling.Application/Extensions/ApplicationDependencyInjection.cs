@@ -61,15 +61,16 @@ public static class ApplicationDependencyInjection
     public static async Task InitialiseManagers(IServiceProvider serviceProvider)
     {
         ServiceProvider = serviceProvider;
-        var scheduleManager = serviceProvider.GetRequiredService<IScheduleManager>();
-        if (scheduleManager is ScheduleManager manager)
-        {
-            await manager.InitializeAsync();
-        }
+
         var resourcemanager = serviceProvider.GetRequiredService<IScheduledEntitiesManager>();
         if (resourcemanager is ScheduledEntitiesManager resManager)
         {
             await resManager.InitializeAsync();
+        }
+        var scheduleManager = serviceProvider.GetRequiredService<IScheduleManager>();
+        if (scheduleManager is ScheduleManager manager)
+        {
+          await manager.InitializeAsync();
         }
     }
 }

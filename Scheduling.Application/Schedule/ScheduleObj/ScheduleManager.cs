@@ -131,6 +131,7 @@ namespace Application.Schedule.ScheduleObj
             ScheduleDetailsMap.Clear();
 
             // Reload from database
+            _initialized = false;
             await InitializeAsync();
         }
 
@@ -158,7 +159,7 @@ namespace Application.Schedule.ScheduleObj
             return scheduleAllDetails;
         }
 
-        private async Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,CrudMethodType methodType)
+        public async Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,CrudMethodType methodType)
         {
           var objectToSend = GetAllDetailNotificationObj(scheduleAllDetails );
           await _notificationManager.SendCrudDataToClientAsync(
@@ -195,9 +196,7 @@ namespace Application.Schedule.ScheduleObj
           }
         }
 
-        public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(
-            string userName
-        )
+        public async Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails()
         {
             try
             {
@@ -456,6 +455,23 @@ namespace Application.Schedule.ScheduleObj
               },
             };
           return objectToSend;
+        }
+
+        public async Task<ScheduleAllDetails> CreateResourceMapping(ScheduleResourceDto resourceDto)
+        {
+          await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
+          var schedule = GetDetailed(resourceDto.ScheduleId);
+          ScheduleAllDetails scheduleAllDetails = await UpdateInMemory(schedule.schedules);
+          return scheduleAllDetails;
+        }
+
+        public async Task DeleteAttachedResources(List<DetachScheduleResourceDto> resourceDto)
+        {
+          await _scheduledEntitiesManager.DeleteMultipleResources(resourceDto);
+          await _scheduledEntitiesManager.RefreshCacheAsync();
+          await RefreshCacheAsync();
+          IEnumerable<ScheduleAllDetails> updatedSchedule  = await GetScheduleWithAllDetails();
+          await SendClientNotificationWithSchedule( updatedSchedule.ToList() , CrudMethodType.Update);
         }
     }
 }
