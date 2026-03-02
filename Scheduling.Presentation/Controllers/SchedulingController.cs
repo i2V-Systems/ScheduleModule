@@ -22,7 +22,6 @@ namespace Presentation.Controllers
         private readonly IScheduleManager _scheduleManager;
 
         public SchedulingController(
-            ILogger<SchedulingController> logger,
             IScheduleManager scheduleManager,
             IScheduledEntitiesManager scheduledEntitiesManager
             )
@@ -207,9 +206,9 @@ namespace Presentation.Controllers
             var scheduleAllDetails = await _scheduleManager.CreateResourceMapping(resourceDto);
             return Ok(scheduleAllDetails);
           }
-          catch (Exception e)
+          catch (Exception exception)
           {
-            Log.Error("error in SchedulingController AttachSchedule",e.Message);
+            Log.Error("error in SchedulingController AttachSchedule",exception.Message);
             throw;
           }
         }
