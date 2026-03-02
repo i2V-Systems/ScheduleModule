@@ -176,8 +176,9 @@ namespace Presentation.Controllers
                 new List<ScheduleAllDetails?>();
             foreach (var id in ScheduleToBeDeleted)
             {
-                scheduleAllDetailsList.Add(
-                    _scheduleManager.GetScheduleDetailsFromCache(id)
+              var scheduleDetailsFromCache = _scheduleManager.GetScheduleDetailsFromCache(id)
+                ;
+                scheduleAllDetailsList.Add(scheduleDetailsFromCache
                 );
             }
 
@@ -201,26 +202,16 @@ namespace Presentation.Controllers
         [HttpPost("attachSchedule")]
         public async Task<IActionResult> AttachSchedule([FromBody] ScheduleResourceDto resourceDto)
         {
-            try
-            {
-                await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
-                var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-
-                if (schedule != null)
-                {
-                  ScheduleAllDetails scheduleAllDetails = await _scheduleManager.CreateResourceMapping(schedule);
-
-                  return Ok(scheduleAllDetails);
-                }
-
-                  throw new NullReferenceException("Schedule not found");
-
-            }
-            catch (Exception exception)
-            {
-                Log.Error("error in SchedulingController AttachSchedule",exception.Message);
-                throw;
-            }
+          try
+          {
+            var scheduleAllDetails = await _scheduleManager.CreateResourceMapping(resourceDto);
+            return Ok(scheduleAllDetails);
+          }
+          catch (Exception e)
+          {
+            Log.Error("error in SchedulingController AttachSchedule",e.Message);
+            throw;
+          }
         }
 
         [HttpPost("detachScheduleResourceMultiple")]

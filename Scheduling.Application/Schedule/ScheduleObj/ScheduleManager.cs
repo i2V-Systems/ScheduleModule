@@ -471,7 +471,8 @@ namespace Application.Schedule.ScheduleObj
           await _scheduledEntitiesManager.RefreshCacheAsync();
           await RefreshCacheAsync();
           IEnumerable<ScheduleAllDetails> updatedSchedule  = await GetScheduleWithAllDetails();
-          await SendClientNotificationWithSchedule( updatedSchedule.ToList() , CrudMethodType.Update);
+          var allDetails = updatedSchedule.ToList();
+          await SendClientNotificationWithSchedule(allDetails  , CrudMethodType.Update);
         }
     }
 }

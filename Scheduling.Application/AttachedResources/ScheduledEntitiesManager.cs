@@ -6,6 +6,7 @@ using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.AttachedResources.Enums;
 using Serilog;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Scheduling.Contracts.Schedule.DTOs;
@@ -173,55 +174,60 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 Log.Error("Error in ResourceManager AddScheduleResourceMap ",exception.Message);
             }
         }
-        public async Task<Guid> DeleteScheduleResourceMap(Guid id,bool Notify = false)
+        public async Task<Guid> DeleteScheduleResourceMap(Guid id, bool notify = false)
         {
-            try
+          try
+          {
+            using var scope = _serviceProvider.CreateScope();
+            var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+
+            await crudService.DeleteResourceMappingAsync(id, userId);
+
+            if (!TryRemoveFromMemory(id, out var removedMap, out var scheduleId))
             {
-                using var scope = _serviceProvider.CreateScope();
-                var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
-
-                await crudService.DeleteResourceMappingAsync(id,userId);
-
-                var mapEntry = ScheduleResourcesMap
-                    .FirstOrDefault(keyValuePair => keyValuePair.Value.Id == id);
-
-                if (mapEntry.Equals(default(KeyValuePair<Guid, ScheduleResourceDto>)))
-                {
-                    Log.Warning("Resource mapping with Id {Id} not found in memory map.", id);
-                    return Guid.Empty;
-                }
-
-                var mapId = mapEntry.Key;
-                if (ScheduleResourcesMap.TryRemove(mapId, out var removedMap))
-                {
-                    if (Notify && removedMap != null)
-                    {
-                        ScheduleResourcePublish?.Invoke(this, removedMap);
-                    }
-
-                    // Notify detach handlers to update resource state (e.g. restore LoginWindow for users)
-                    if (removedMap != null)
-                    {
-                        var detachHandlers = scope.ServiceProvider.GetServices<IResourceDetachHandler>();
-                        foreach (var handler in detachHandlers.Where(h => h.ResourceType == removedMap.ResourceType))
-                        {
-                            await handler.OnDetachedAsync(removedMap);
-                        }
-                    }
-
-                    return mapEntry.Value.ScheduleId;
-                }
-                else
-                {
-                    Log.Warning("Failed to remove resource mapping with Id {Id} from memory map.", id);
-                    return Guid.Empty;
-                }
+              Log.Warning("Resource mapping with Id {Id} not found or failed removal.", id);
+              return Guid.Empty;
             }
-            catch (Exception exception)
-            {
-                Log.Error(exception, "Error deleting resource mapping with Id {Id}", id);
-                return Guid.Empty;
-            }
+
+            if (notify)
+              ScheduleResourcePublish?.Invoke(this, removedMap);
+
+            await HandleDetachAsync(scope.ServiceProvider, removedMap);
+
+            return scheduleId;
+          }
+          catch (Exception exception)
+          {
+            Log.Error(exception, "Error deleting resource mapping with Id {Id}", id);
+            return Guid.Empty;
+          }
+        }
+        private async Task HandleDetachAsync(IServiceProvider provider, ScheduleResourceDto removedMap)
+        {
+          var detachHandlers = provider.GetServices<IResourceDetachHandler>();
+
+          foreach (var handler in detachHandlers
+                     .Where(handler => handler.ResourceType == removedMap.ResourceType))
+          {
+            await handler.OnDetachedAsync(removedMap);
+          }
+        }
+        private bool TryRemoveFromMemory(Guid id, [NotNullWhen(true)]out ScheduleResourceDto? removedMap, out Guid scheduleId)
+        {
+          removedMap = null;
+          scheduleId = Guid.Empty;
+
+          var mapEntry = ScheduleResourcesMap
+            .FirstOrDefault(kvp => kvp.Value.Id == id);
+
+          if (mapEntry.Equals(default(KeyValuePair<Guid, ScheduleResourceDto>)))
+            return false;
+
+          if (!ScheduleResourcesMap.TryRemove(mapEntry.Key, out removedMap))
+            return false;
+
+          scheduleId = mapEntry.Value.ScheduleId;
+          return true;
         }
 
         public async Task DeleteMultipleResources(List<DetachScheduleResourceDto> resources)
@@ -237,9 +243,9 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
             }
 
           }
-          catch (Exception ex)
+          catch (Exception exception)
           {
-            Log.Error("Error in ResourceManager DeleteMultipleResources : ",ex.Message);
+            Log.Error("Error in ResourceManager DeleteMultipleResources : ",exception.Message);
 
           }
 

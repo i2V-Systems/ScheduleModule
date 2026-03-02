@@ -94,9 +94,9 @@ public class ResourceMappingService :IScheduleResourceService
         _resourceRepository.Delete(entity,userId);
         return entity.Id;
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        _logger.LogError(ex, "Error in DeleteResourceSchdeuleMappingAsync of ResourceMappingService");
+        _logger.LogError(exception, "Error in DeleteResourceSchdeuleMappingAsync of ResourceMappingService");
         throw;
       }
     }
