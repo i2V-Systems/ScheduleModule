@@ -4,19 +4,19 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM information_schema.columns
-        WHERE table_schema = 'public'
+        WHERE table_schema = 'scheduler'
           AND table_name = 'Schedule'
           AND column_name = 'Type'
           AND data_type = 'text'
     ) THEN
-        DROP TABLE IF EXISTS public."Schedule" CASCADE;
+        DROP TABLE IF EXISTS scheduler."Schedule" CASCADE;
         RAISE NOTICE 'Schedule table dropped because Type column was text type';
     END IF;
 END$$;
 
 
 -- Create Schedules table
-CREATE TABLE  IF NOT EXISTS public."Schedule" (
+CREATE TABLE  IF NOT EXISTS scheduler."Schedule" (
                                     "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
                                     "Name" text NOT NULL,
                                     "Type" integer NOT NULL,
@@ -40,9 +40,9 @@ BEGIN
         SELECT 1
         FROM pg_constraint
         WHERE conname = 'UK_Schedule_Name'
-          AND conrelid = 'public."Schedule"'::regclass
+          AND conrelid = 'scheduler."Schedule"'::regclass
     ) THEN
-ALTER TABLE public."Schedule"
+ALTER TABLE scheduler."Schedule"
     ADD CONSTRAINT "UK_Schedule_Name" UNIQUE ("Name");
 END IF;
 END;
@@ -50,15 +50,15 @@ $$;
 
 -- Create ScheduleResourceMapping table
 
-CREATE TABLE  IF NOT EXISTS  public."ScheduleResourceMapping" (
+CREATE TABLE  IF NOT EXISTS  scheduler."ScheduleResourceMapping" (
     "Id" UUID PRIMARY KEY,
     "ScheduleId" UUID NOT NULL,
     "ResourceId" UUID NOT NULL,
     "ResourceType" VARCHAR(50) NOT NULL,
     "metaData" text NULL,
-    FOREIGN KEY ("ScheduleId") REFERENCES public."Schedule"("Id") ON DELETE CASCADE
+    FOREIGN KEY ("ScheduleId") REFERENCES scheduler."Schedule"("Id") ON DELETE CASCADE
 );
-ALTER TABLE public."ScheduleResourceMapping"
+ALTER TABLE scheduler."ScheduleResourceMapping"
 DROP CONSTRAINT if exists uk_schedule_resource_type;
 
 
@@ -69,7 +69,7 @@ BEGIN
         FROM pg_constraint
         WHERE conname = 'uk_schedule_resource'
     ) THEN
-ALTER TABLE public."ScheduleResourceMapping"
+ALTER TABLE scheduler."ScheduleResourceMapping"
 DROP CONSTRAINT uk_schedule_resource;
 END IF;
 END$$;
@@ -81,7 +81,7 @@ BEGIN
         FROM pg_constraint
         WHERE conname = 'uk_schedule_resource'
     ) THEN
-ALTER TABLE public."ScheduleResourceMapping"
+ALTER TABLE scheduler."ScheduleResourceMapping"
     ADD CONSTRAINT uk_schedule_resource
       UNIQUE ("ScheduleId", "ResourceId", "ResourceType");
 END IF;
