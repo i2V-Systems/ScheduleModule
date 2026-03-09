@@ -49,7 +49,7 @@ namespace Application.Schedule.ScheduleObj
                 throw;
             }
         }
-        public async Task<bool> ExistAsync(Guid id,string userName="")
+        public async Task<bool> ExistAsync(Guid id)
         {
             try
             {
@@ -58,7 +58,7 @@ namespace Application.Schedule.ScheduleObj
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Error getting all schedules");
+                _logger.LogError(exception, "Error checking if schedule exists {ScheduleId}", id);
                 throw;
             }
         }
