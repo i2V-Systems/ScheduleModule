@@ -37,8 +37,9 @@ public static class ScheduleModuleRegistration
 
   public static void StartSeedingData(IConfiguration configuration)
   {
-    ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", configuration);
     ScheduleDbInitialise.scheduleDbInitialise("quartz.sql", configuration);
+    ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", configuration);
+  
 
   }
 
