@@ -1,3 +1,6 @@
+using System.ComponentModel.Design;
+using Application.AttachedResources.Service;
+using Domain.AttachedResources;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -49,6 +52,11 @@ public class TopicDispatcherJob : IJob
 
             // Parse topics from JSON
             var topicStrings = JsonConvert.DeserializeObject<List<string>>(topicsJson) ?? new List<string>();
+
+            //Fetch topic string from DB as during new schedule ,  topic is null
+            using var scope = _serviceProvider.CreateScope();
+            var resourceService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+            topicStrings = (await resourceService.GetAttachedResourceStringsAsync(scheduleId)).Split(',').ToList();
 
             // Convert string topics to enum values
             var topics = new List<Resources>();

@@ -101,5 +101,14 @@ public class ResourceMappingService :IScheduleResourceService
       }
     }
 
+    public async Task<string> GetAttachedResourceStringsAsync(Guid scheduleId)
+    {
+      var resources = await _resourceRepository.FindAllAsync(resource => resource.ScheduleId == scheduleId);
+
+      return string.Join(", ",
+        resources
+          .Select(x => x.ResourceType)
+          .Distinct());
+    }
 
 }
