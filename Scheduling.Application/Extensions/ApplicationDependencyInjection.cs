@@ -41,10 +41,12 @@ public static class ApplicationDependencyInjection
 
        // Auto-register services with attributes (your current approach)
 
-        services.AddServicesOfType<IScopedService>();
-        services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();
-        services.AddServicesWithAttributeOfType<TransientServiceAttribute>();
-        services.AddServicesWithAttributeOfType<SingletonServiceAttribute>();
+       // services.AddServicesOfType<IScopedService>();
+       services.AddServicesWithAttributeOfType<ScopedServiceAttribute>();
+       // services.AddServicesOfType<ITransientService>();
+       services.AddServicesWithAttributeOfType<TransientServiceAttribute>();
+       // services.AddServicesOfType<ISingletonService>();
+       services.AddServicesWithAttributeOfType<SingletonServiceAttribute>();
 
         // MediatR
         services.AddMediatR(cfg =>
