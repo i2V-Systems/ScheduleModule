@@ -101,7 +101,7 @@ public static class ServiceRegistrationExtensions
             .ToArray();
 
         var types = assemblies
-            .SelectMany(a => a.GetTypes())
+            .SelectMany(a => { try { return a.GetTypes(); } catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t != null)!; } })
             .Where(t => t.IsDefined(typeof(TAttribute), false))
             .Where(t => t.IsClass && !t.IsAbstract);
 
