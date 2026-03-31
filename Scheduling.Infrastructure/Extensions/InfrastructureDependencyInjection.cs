@@ -30,6 +30,7 @@ public static class InfrastructureDependencyInjection
                     {
                         b.MigrationsAssembly("DataLayer");
                         b.UseVector();
+                        b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                     })
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                 .EnableSensitiveDataLogging();

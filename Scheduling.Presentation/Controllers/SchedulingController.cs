@@ -2,6 +2,7 @@
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Scheduling.Contracts.AttachedResources;
 using Scheduling.Contracts.AttachedResources.DTOs;
@@ -19,6 +20,7 @@ namespace Presentation.Controllers
         private readonly IScheduleManager _scheduleManager;
 
         public SchedulingController(
+            ILogger<SchedulingController> logger,
             IScheduleManager scheduleManager,
             IScheduledEntitiesManager scheduledEntitiesManager
             )
@@ -41,7 +43,7 @@ namespace Presentation.Controllers
             try
             {
                 HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
-                return Ok(await  _scheduleManager.GetScheduleWithAllDetails(userName!));
+                return Ok(await  _scheduleManager.GetScheduleWithAllDetails());
             }
             catch (Exception ex)
             {
@@ -79,7 +81,7 @@ namespace Presentation.Controllers
             {
                 HttpContext.Request.Headers.TryGetValue("userid", out StringValues userid);
 
-                if (schedule?.schedules == null || string.IsNullOrWhiteSpace(schedule?.schedules.Name))
+                if (schedule.schedules == null || string.IsNullOrWhiteSpace(schedule.schedules.Name))
                 {
                     return BadRequest("Schedule name is required");
                 }
@@ -123,7 +125,6 @@ namespace Presentation.Controllers
                     });
                 }
                 ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule.schedules);
-
                 return Ok(scheduleAllDetails);
             }
             catch (Exception ex)
@@ -167,7 +168,14 @@ namespace Presentation.Controllers
             {
                 return BadRequest();
             }
-
+            List<ScheduleAllDetails?> scheduleAllDetailsList =
+                new List<ScheduleAllDetails?>();
+            foreach (var id in ScheduleToBeDeleted)
+            {
+                scheduleAllDetailsList.Add(
+                    _scheduleManager.GetScheduleDetailsFromCache(id)
+                );
+            }
 
             await _scheduleManager.DeleteMultipleSchedulesAsync(ScheduleToBeDeleted);
             return Ok();
@@ -191,20 +199,103 @@ namespace Presentation.Controllers
         {
             try
             {
-                await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
-                var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
-
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
-
+                var scheduleAllDetails = await _scheduleManager.CreateResourceMapping(resourceDto);
                 return Ok(scheduleAllDetails);
             }
             catch (Exception e)
             {
                 Log.Error("error in SchedulingController AttachSchedule",e.Message);
-                return BadRequest(e.Message);
+                throw;
             }
         }
 
+        [HttpPost("detachScheduleResourceMultiple")]
+        public async Task<IActionResult> DeleteAttachedResourcesByResourceIds([FromBody] List<DetachScheduleResourceDto> resourceDto)
+        {
+          try
+          {
+            await _scheduleManager.DeleteAttachedResources(resourceDto);
+            return Ok();
+          }
+          catch (Exception e)
+          {
+            Log.Error("error in SchedulingController DeleteAttachedResourcesByResourceIds",e.Message);
+            throw;
+          }
+        }
+
+
+        // [HttpPost("AttachOrUpdateSchedules")]
+        // public async Task<IActionResult> AttachOrUpdateSchedules([FromBody] ScheduleResourceDto dto)
+        // {
+        //     try
+        //     {
+        //         // Step 1: Get existing mappings
+        //         var existingMappings = _resourceManager.GetResourcesByScheduleId(dto.ScheduleId);
+        //         var existingScheduleIds = existingMappings.Select(m => m.ScheduleId).ToHashSet();
+        //
+        //         // Step 2: Distinct new schedules
+        //         var newScheduleIds = dto.ScheduleId.Distinct().ToHashSet();
+        //
+        //         // Step 3: Determine schedules to add and remove
+        //         var schedulesToRemoveIds = existingScheduleIds.Except(newScheduleIds).ToList();
+        //         var schedulesToAdd = newScheduleIds.Except(existingScheduleIds).ToList();
+        //
+        //         // Step 4: Get mappings to remove (by ID)
+        //         var mappingsToRemove = existingMappings
+        //             .Where(m => schedulesToRemoveIds.Contains(m.ScheduleId))
+        //             .Select(m => m.Id)
+        //             .ToList();
+        //
+        //         // Step 5: Remove mappings from database and memory
+        //         if (mappingsToRemove.Any())
+        //         {
+        //             await _resourceManager.DeleteScheduleResourceMap(mappingsToRemove);
+        //         }
+        //
+        //         // Step 6: Add new mappings to database and memory
+        //         foreach (var scheduleId in schedulesToAdd)
+        //         {
+        //             var mapDto = new ScheduleResourceDto(Guid.NewGuid(), scheduleId, dto.ResourceId, dto.ResourceType);
+        //             await _resourceManager.AddScheduleResourceMap(mapDto);
+        //         }
+        //
+        //         // Step 7: Update in-memory schedule for affected schedule IDs
+        //         var affectedScheduleIds = schedulesToAdd.Union(schedulesToRemoveIds);
+        //         foreach (var scheduleId in affectedScheduleIds)
+        //         {
+        //             var schedule = _scheduleManager.GetScheduleFromCache(scheduleId);
+        //             if (schedule != null)
+        //             {
+        //                 _scheduleManager.UpdateInMemory(schedule);
+        //             }
+        //         }
+        //
+        //         // Step 8: Prepare final list of schedule details
+        //         var finalScheduleDetails = newScheduleIds
+        //             .Select(id => _scheduleManager.GetScheduleDetailsFromCache(id))
+        //             .Where(details => details != null)
+        //             .ToList();
+        //
+        //         // Step 9: Notify clients about updated state (if needed)
+        //         if (finalScheduleDetails.Any())
+        //         {
+        //             var objectToSend = new Dictionary<string, dynamic>
+        //             {
+        //                 { "scheduleAllDetailsList", finalScheduleDetails }
+        //             };
+        //
+        //             await _scheduleManager.SendCrudDataToClientAsync(CrudMethodType.Update, objectToSend);
+        //         }
+        //
+        //         return Ok(finalScheduleDetails);
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Log.Error("AttachOrUpdateSchedules error: {Message}", ex.Message);
+        //         return BadRequest("Failed to update schedule mappings");
+        //     }
+        // }
 
 
         [HttpPut("removeMultipleAttachedResource")]
@@ -215,7 +306,6 @@ namespace Presentation.Controllers
                 await _scheduledEntitiesManager.DeleteMultipleScheduleResourceMap(data.Ids,data.Schedule);
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
                 ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
-
                 return Ok(scheduleAllDetails);
             }
             catch (Exception e)
@@ -274,7 +364,6 @@ namespace Presentation.Controllers
                 await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule);
-
                 return Ok(scheduleAllDetails.schedules);
             }
             catch (Exception e)
@@ -292,7 +381,6 @@ namespace Presentation.Controllers
                 await _scheduledEntitiesManager.UpdateScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(schedule);
-
                 return Ok(scheduleAllDetails);
             }
             catch (Exception e)

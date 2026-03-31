@@ -1,5 +1,6 @@
 ﻿using Domain.AttachedResources;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Newtonsoft.Json;
 using Scheduling.Contracts.AttachedResources.Enums;
@@ -37,12 +38,19 @@ namespace Infrastructure.Schedule
             //     .Property(e => e.Status)
             //     .HasConversion(new EnumToStringConverter<ScheduleStatus>());
             
+            // Value comparer for StartDays collection
+            var startDaysComparer = new ValueComparer<List<Days>>(
+                (c1, c2) => JsonConvert.SerializeObject(c1) == JsonConvert.SerializeObject(c2),
+                c => c == null ? 0 : JsonConvert.SerializeObject(c).GetHashCode(),
+                c => JsonConvert.DeserializeObject<List<Days>>(JsonConvert.SerializeObject(c)) ?? new List<Days>());
+
             modelBuilder.Entity<Domain.Schedule.Schedule>()
                 .Property(e => e.StartDays)
                 .HasConversion(
                     v => JsonConvert.SerializeObject(v ?? new List<Days>()),
                     v => string.IsNullOrEmpty(v) ? new List<Days>() : JsonConvert.DeserializeObject<List<Days>>(v) ?? new List<Days>()
-                );
+                )
+                .Metadata.SetValueComparer(startDaysComparer);
             modelBuilder.Entity<ScheduleResourceMapping>()
                 .Property(e => e.ResourceType)
                 .HasConversion(new EnumToStringConverter<Resources>());

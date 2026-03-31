@@ -1,3 +1,6 @@
+using System.ComponentModel.Design;
+using Application.AttachedResources.Service;
+using Domain.AttachedResources;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -17,7 +20,7 @@ public class TopicDispatcherJob : IJob
     private readonly ILogger<TopicDispatcherJob> _logger;
 
     public const string Name = nameof(TopicDispatcherJob);
-    
+
     public TopicDispatcherJob(IServiceProvider serviceProvider, ILogger<TopicDispatcherJob> logger)
     {
         _serviceProvider = serviceProvider;
@@ -31,15 +34,15 @@ public class TopicDispatcherJob : IJob
             var jobKey = context.JobDetail.Key;
             if (context.Recovering)
             {
-                Log.Error("RECOVERING missed job execution for: {JobKey} at {RecoveryTime}", 
+                Log.Information("RECOVERING missed job execution for: {JobKey} at {RecoveryTime}",
                     jobKey, DateTimeOffset.Now);
             }
             else
             {
-                Log.Error("Normal job execution for: {JobKey} at {ExecutionTime}", 
+                Log.Information("Normal job execution for: {JobKey} at {ExecutionTime}",
                     jobKey, DateTimeOffset.Now);
             }
-            
+
             var data = context.MergedJobDataMap;
 
             // Extract job data
@@ -49,6 +52,11 @@ public class TopicDispatcherJob : IJob
 
             // Parse topics from JSON
             var topicStrings = JsonConvert.DeserializeObject<List<string>>(topicsJson) ?? new List<string>();
+
+            //Fetch topic string from DB as during new schedule ,  topic is null
+            using var scope = _serviceProvider.CreateScope();
+            var resourceService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
+            topicStrings = (await resourceService.GetAttachedResourceStringsAsync(scheduleId)).Split(',').ToList();
 
             // Convert string topics to enum values
             var topics = new List<Resources>();
@@ -90,8 +98,8 @@ public class TopicDispatcherJob : IJob
         }
     }
     private async Task ProcessWithHandlersAsync(
-        ScheduleEventTrigger eventTrigger, 
-        List<Resources> topics, 
+        ScheduleEventTrigger eventTrigger,
+        List<Resources> topics,
         List<ITopicAwareJobHandler> handlers)
     {
         if (!handlers.Any())
@@ -100,25 +108,25 @@ public class TopicDispatcherJob : IJob
             return;
         }
 
-        _logger.LogInformation("Processing {TopicCount} topics with {HandlerCount} handlers", 
+        _logger.LogInformation("Processing {TopicCount} topics with {HandlerCount} handlers",
             topics.Count, handlers.Count);
 
         // Process each topic with all interested handlers
         foreach (var topic in topics)
         {
             var topicHandlers = handlers.Where(h => h.InterestedTopics.Contains(topic)).ToList();
-        
+
             foreach (var handler in topicHandlers)
             {
                 try
                 {
                     await handler.HandleAsync(eventTrigger, topic);
-                    _logger.LogDebug("Handler {HandlerType} processed topic {Topic} successfully", 
+                    _logger.LogDebug("Handler {HandlerType} processed topic {Topic} successfully",
                         handler.GetType().Name, topic);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Handler {HandlerType} failed to process topic {Topic}", 
+                    _logger.LogError(ex, "Handler {HandlerType} failed to process topic {Topic}",
                         handler.GetType().Name, topic);
                 }
             }

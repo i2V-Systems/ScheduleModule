@@ -20,14 +20,14 @@ public class ResourceMappingService :IScheduleResourceService
         _resourceRepository = scheduleResourceRepository;
         _mapper = mapper;
     }
-    
+
     public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto,Guid userId)
     {
         try
         {
             var resource = _mapper.Map<Domain.AttachedResources.ScheduleResourceMapping>(dto);
             await _resourceRepository.AddAsync(resource,userId);
-            
+
             _logger.LogInformation("mapping created with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
             return dto;
@@ -44,7 +44,7 @@ public class ResourceMappingService :IScheduleResourceService
         {
             var resource = _mapper.Map<ScheduleResourceMapping>(dto);
             _resourceRepository.Update(resource,userId);
-            
+
             _logger.LogInformation("mapping updated with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
             return dto;
@@ -85,4 +85,30 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
+
+    public async Task<Guid> DeleteResourceSchdeuleMappingAsync(DetachScheduleResourceDto mapping,Guid userId)
+    {
+      try
+      {
+        var entity = await _resourceRepository.FindAsync(item => item.ScheduleId == mapping.ScheduleId && item.ResourceId == mapping.ResourceId);
+        _resourceRepository.Delete(entity,userId);
+        return entity.Id;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error in DeleteResourceSchdeuleMappingAsync of ResourceMappingService");
+        throw;
+      }
+    }
+
+    public async Task<string> GetAttachedResourceStringsAsync(Guid scheduleId)
+    {
+      var resources = await _resourceRepository.FindAllAsync(resource => resource.ScheduleId == scheduleId);
+
+      return string.Join(", ",
+        resources
+          .Select(x => x.ResourceType)
+          .Distinct());
+    }
+
 }

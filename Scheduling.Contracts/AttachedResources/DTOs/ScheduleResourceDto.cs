@@ -7,6 +7,9 @@ namespace Scheduling.Contracts.AttachedResources.DTOs;
 public record ScheduleResourceDto(
     Guid Id, Guid ScheduleId, Guid ResourceId, Resources ResourceType,string? metaData);
 
+public record DetachScheduleResourceDto(
+  Guid ScheduleId, Guid ResourceId);
+
 public record DetachScheduleRequest(List<Guid> Ids, ScheduleAllDetails Schedule);
 
 // public record AttachUpdateDto(

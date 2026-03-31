@@ -29,9 +29,11 @@ public interface IScheduleManager
         Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto, string userId = null);
         Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto dto);
         Task DeleteScheduleAsync(Guid id);
+        Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,
+          CrudMethodType methodType);
 
         // Complex queries
-        Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(string userName);
+        Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails();
         IEnumerable<ScheduleDto> GetAllSchedules();
 
         // Memory management operations
@@ -46,6 +48,9 @@ public interface IScheduleManager
         Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids);
         Task UpdateMultipleSchedulesAsync(List<ScheduleAllDetails> schedules);
         Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule);
+        Task<ScheduleAllDetails> CreateResourceMapping(ScheduleResourceDto resourceMap);
+
+        Task DeleteAttachedResources(List<DetachScheduleResourceDto> resourceDto);
 
         // Cross-cutting concerns
 

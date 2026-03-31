@@ -8,4 +8,6 @@ public interface  IScheduleResourceService
     Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto mapping, Guid userId);
     Task<IEnumerable<ScheduleResourceDto>> GetAllResourceMappingAsync();
     Task DeleteResourceMappingAsync(Guid mappingId,Guid userId);
+    Task<Guid> DeleteResourceSchdeuleMappingAsync(DetachScheduleResourceDto mapping,Guid userId);
+    Task<string>GetAttachedResourceStringsAsync(Guid scheduleId);
 }
