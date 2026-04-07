@@ -315,7 +315,7 @@ namespace Application.Schedule.ScheduleObj
         }
 
         //memory functions
-        public async Task<ScheduleAllDetails>  UpdateInMemory(ScheduleDto schedule)
+        public async Task<ScheduleAllDetails>  UpdateInMemory(ScheduleDto schedule, bool notifyClient = true)
         {
           try
           {
@@ -330,8 +330,11 @@ namespace Application.Schedule.ScheduleObj
               };
               AddOrUpdateScheduleDetails(updatedDetails);
               ScheduleAllDetails updatedSchedule = GetScheduleDetailsFromCache(schedule.Id);
-              await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() { updatedSchedule },
+              if (notifyClient)
+              {
+                await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() { updatedSchedule },
                   CrudMethodType.Update);
+              }
 
               return updatedSchedule;
             }
@@ -379,7 +382,7 @@ namespace Application.Schedule.ScheduleObj
             var deletedSchedule = GetScheduleFromCache(map.ScheduleId);
             if (deletedSchedule != null)
             {
-              UpdateInMemory(deletedSchedule);
+              UpdateInMemory(deletedSchedule,false);
               var deletedScheduleDetails =
                 GetScheduleDetailsFromCache(map.ScheduleId);
               if (deletedScheduleDetails != null)
@@ -387,10 +390,6 @@ namespace Application.Schedule.ScheduleObj
             }
           }
 
-          if (affectedSchedules.Count > 0)
-          {
-            await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.Delete);
-          }
 
 
           //  HANDLE ADD (if ScheduleId is valid)
@@ -402,7 +401,7 @@ namespace Application.Schedule.ScheduleObj
 
             if (addedSchedule != null)
             {
-                UpdateInMemory(addedSchedule);
+                UpdateInMemory(addedSchedule,false);
                 var addedScheduleDetails =
                 GetScheduleDetailsFromCache(resourceMap.ScheduleId);
 
@@ -413,8 +412,8 @@ namespace Application.Schedule.ScheduleObj
                 affectedSchedules.Add(addedScheduleDetails);
               }
             }
-            await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.Add);
           }
+          await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.ScheduleAttachmentChanged);
 
 
 
