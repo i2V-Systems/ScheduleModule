@@ -38,7 +38,7 @@ public interface IScheduleManager
 
         // Memory management operations
         void AddToMemory(ScheduleDto schedule);
-        Task<ScheduleAllDetails> UpdateInMemory(ScheduleDto schedule, bool notifyClient = true);
+        Task<ScheduleAllDetails> UpdateInMemory(ScheduleDto schedule );
         void RemoveFromMemory(Guid id);
         void AddOrUpdateScheduleDetails(ScheduleAllDetails details);
         bool IsScheduleNameAvailable(string name,Guid? id=null);

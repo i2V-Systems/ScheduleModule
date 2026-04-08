@@ -306,6 +306,9 @@ namespace Presentation.Controllers
                 await _scheduledEntitiesManager.DeleteMultipleScheduleResourceMap(data.Ids,data.Schedule);
                 var schedule = _scheduleManager.GetScheduleFromCache(data.Schedule.schedules.Id);
                 ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateInMemory(schedule);
+                List<ScheduleAllDetails> scheduleAllDetailsList = new List<ScheduleAllDetails>() { scheduleAllDetails };
+                _scheduleManager.SendClientNotificationWithSchedule(scheduleAllDetailsList,
+                  CrudMethodType.ScheduleAttachmentChanged);
                 return Ok(scheduleAllDetails);
             }
             catch (Exception e)
@@ -343,7 +346,10 @@ namespace Presentation.Controllers
                 var scheduleWithAllDetails= _scheduleManager.GetScheduleDetailsFromCache(scheduleId);
                 if (scheduleWithAllDetails != null)
                 {
+
                   ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(scheduleWithAllDetails.schedules);
+                  List<ScheduleAllDetails> scheduleAllDetailsList = new List<ScheduleAllDetails>(){scheduleAllDetails};
+                  _scheduleManager.SendClientNotificationWithSchedule(scheduleAllDetailsList,CrudMethodType.ScheduleAttachmentChanged);
                 }
 
                 return Ok();
@@ -381,6 +387,8 @@ namespace Presentation.Controllers
                 await _scheduledEntitiesManager.UpdateScheduleResourceMap(resourceDto);
                 var schedule = _scheduleManager.GetScheduleFromCache(resourceDto.ScheduleId);
                 ScheduleAllDetails scheduleAllDetails= await _scheduleManager.UpdateInMemory(schedule);
+                List<ScheduleAllDetails> scheduleAllDetailsList = new List<ScheduleAllDetails>(){scheduleAllDetails};
+                _scheduleManager.SendClientNotificationWithSchedule(scheduleAllDetailsList,CrudMethodType.ScheduleAttachmentChanged);
                 return Ok(scheduleAllDetails);
             }
             catch (Exception e)

@@ -315,7 +315,7 @@ namespace Application.Schedule.ScheduleObj
         }
 
         //memory functions
-        public async Task<ScheduleAllDetails>  UpdateInMemory(ScheduleDto schedule, bool notifyClient = true)
+        public async Task<ScheduleAllDetails>  UpdateInMemory(ScheduleDto schedule)
         {
           try
           {
@@ -330,11 +330,7 @@ namespace Application.Schedule.ScheduleObj
               };
               AddOrUpdateScheduleDetails(updatedDetails);
               ScheduleAllDetails updatedSchedule = GetScheduleDetailsFromCache(schedule.Id);
-              if (notifyClient)
-              {
-                await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() { updatedSchedule },
-                  CrudMethodType.Update);
-              }
+
 
               return updatedSchedule;
             }
@@ -382,7 +378,7 @@ namespace Application.Schedule.ScheduleObj
             var deletedSchedule = GetScheduleFromCache(map.ScheduleId);
             if (deletedSchedule != null)
             {
-              UpdateInMemory(deletedSchedule,false);
+              UpdateInMemory(deletedSchedule);
               var deletedScheduleDetails =
                 GetScheduleDetailsFromCache(map.ScheduleId);
               if (deletedScheduleDetails != null)
@@ -401,7 +397,7 @@ namespace Application.Schedule.ScheduleObj
 
             if (addedSchedule != null)
             {
-                UpdateInMemory(addedSchedule,false);
+                UpdateInMemory(addedSchedule);
                 var addedScheduleDetails =
                 GetScheduleDetailsFromCache(resourceMap.ScheduleId);
 
@@ -438,6 +434,9 @@ namespace Application.Schedule.ScheduleObj
           await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
           var schedule = GetDetailed(resourceDto.ScheduleId);
           ScheduleAllDetails scheduleAllDetails = await UpdateInMemory(schedule.schedules);
+          List<ScheduleAllDetails> allDetails = new List<ScheduleAllDetails>(){scheduleAllDetails};
+          await SendClientNotificationWithSchedule(allDetails, CrudMethodType.ScheduleAttachmentChanged);
+
           return scheduleAllDetails;
         }
 
