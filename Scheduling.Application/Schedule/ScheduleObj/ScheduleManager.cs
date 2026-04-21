@@ -330,8 +330,7 @@ namespace Application.Schedule.ScheduleObj
               };
               AddOrUpdateScheduleDetails(updatedDetails);
               ScheduleAllDetails updatedSchedule = GetScheduleDetailsFromCache(schedule.Id);
-              await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() { updatedSchedule },
-                  CrudMethodType.Update);
+
 
               return updatedSchedule;
             }
@@ -387,10 +386,6 @@ namespace Application.Schedule.ScheduleObj
             }
           }
 
-          if (affectedSchedules.Count > 0)
-          {
-            await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.Delete);
-          }
 
 
           //  HANDLE ADD (if ScheduleId is valid)
@@ -413,8 +408,8 @@ namespace Application.Schedule.ScheduleObj
                 affectedSchedules.Add(addedScheduleDetails);
               }
             }
-            await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.Add);
           }
+          await SendClientNotificationWithSchedule(affectedSchedules, CrudMethodType.ScheduleAttachmentChanged);
 
 
 
@@ -439,6 +434,9 @@ namespace Application.Schedule.ScheduleObj
           await _scheduledEntitiesManager.AddScheduleResourceMap(resourceDto);
           var schedule = GetDetailed(resourceDto.ScheduleId);
           ScheduleAllDetails scheduleAllDetails = await UpdateInMemory(schedule.schedules);
+          List<ScheduleAllDetails> allDetails = new List<ScheduleAllDetails>(){scheduleAllDetails};
+          await SendClientNotificationWithSchedule(allDetails, CrudMethodType.ScheduleAttachmentChanged);
+
           return scheduleAllDetails;
         }
 
