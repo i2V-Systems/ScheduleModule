@@ -1,4 +1,5 @@
 
+using Application.Abstractions;
 using Application.Schedule;
 using Infrastructure.Schedule;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +42,9 @@ public static class InfrastructureDependencyInjection
         services.AddSingleton<INotificationManager, NotificationManager>();
         // Register open generic - this works for any T
         services.AddTransient(typeof(IScheduleRepository<>), typeof(ScheduleRepository<>));
-
+        
+        // Register Job Execution Log Repository
+        services.AddTransient<IJobExecutionLogRepository, JobExecutionLogRepository>();
 
         return services;
     }

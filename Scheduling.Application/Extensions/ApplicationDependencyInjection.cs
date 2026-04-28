@@ -1,6 +1,8 @@
 using System.Reflection;
+using Application.Abstractions;
 using Application.AttachedResources;
 using Application.AttachedResources.Service;
+using Application.Listeners;
 using Application.Schedule;
 using Application.Schedule.ScheduleEvent;
 using Application.Schedule.ScheduleEvent.JobKey;
@@ -36,6 +38,9 @@ public static class ApplicationDependencyInjection
        services.AddSingleton<IScheduleEventManager, ScheduleEventManager>();
        services.AddSingleton<IScheduleManager, ScheduleManager>();
        // services.AddHostedService<ScheduleInitializationService>();
+
+       // Register Job Execution Listener (Repository is registered in Infrastructure DI)
+       services.AddSingleton<JobExecutionListener>();
 
        services.AddSchedulingScheduler(configuration);
 

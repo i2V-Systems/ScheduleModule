@@ -172,3 +172,57 @@ create index IF NOT EXISTS idx_qrtz_ft_trig_inst_name on scheduler.qrtz_fired_tr
 create index IF NOT EXISTS idx_qrtz_ft_job_name on scheduler.qrtz_fired_triggers(job_name);
 create index IF NOT EXISTS idx_qrtz_ft_job_group on scheduler.qrtz_fired_triggers(job_group);
 create index IF NOT EXISTS idx_qrtz_ft_job_req_recovery on scheduler.qrtz_fired_triggers(requests_recovery);
+
+
+
+-- =============================================
+-- Job Execution Logs Table
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS scheduler."job_execution_logs" (
+                                                            "id"            UUID            NOT NULL DEFAULT uuid_generate_v4(),
+                                                            "job_name"      VARCHAR(200)    NOT NULL,
+                                                            "job_group"     VARCHAR(200)    NOT NULL DEFAULT 'DEFAULT',
+                                                            "fired_at"      TIMESTAMPTZ     NOT NULL,
+                                                            "completed_at"  TIMESTAMPTZ     NULL,
+                                                            "status"        VARCHAR(20)     NOT NULL,
+                                                            "error_message" TEXT            NULL,
+                                                            "duration_ms"   BIGINT          NULL,
+                                                            "created_at"    TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+
+                                                            CONSTRAINT "pk_job_execution_logs" PRIMARY KEY ("id"),
+                                                            CONSTRAINT "chk_job_execution_logs_status"
+                                                              CHECK ("status" IN ('Started', 'Completed', 'Failed'))
+);
+
+-- -- =============================================
+-- -- Indexes
+-- -- =============================================
+--
+-- CREATE INDEX IF NOT EXISTS "ix_job_execution_logs_job_name"
+--   ON scheduler."job_execution_logs" ("job_name");
+--
+-- CREATE INDEX IF NOT EXISTS "ix_job_execution_logs_fired_at"
+--   ON scheduler."job_execution_logs" ("fired_at" DESC);
+--
+-- CREATE INDEX IF NOT EXISTS "ix_job_execution_logs_status"
+--   ON scheduler."job_execution_logs" ("status");
+--
+-- CREATE INDEX IF NOT EXISTS "ix_job_execution_logs_job_name_fired_at"
+--   ON scheduler."job_execution_logs" ("job_name", "fired_at" DESC);
+
+-- =============================================
+-- Comments
+-- =============================================
+
+COMMENT ON TABLE scheduler."job_execution_logs"
+  IS 'Tracks every Quartz job execution with status and duration';
+
+COMMENT ON COLUMN scheduler."job_execution_logs"."status"
+  IS 'Started | Completed | Failed';
+
+COMMENT ON COLUMN scheduler."job_execution_logs"."duration_ms"
+  IS 'NULL when status is Started, populated on Completed or Failed';
+
+COMMENT ON COLUMN scheduler."job_execution_logs"."error_message"
+  IS 'Populated only when status is Failed';

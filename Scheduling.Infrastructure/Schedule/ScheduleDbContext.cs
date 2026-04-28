@@ -1,4 +1,5 @@
 ﻿using Domain.AttachedResources;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -18,6 +19,7 @@ namespace Infrastructure.Schedule
 
         public DbSet<Domain.Schedule.Schedule> Schedule { get; set; }
         public DbSet<ScheduleResourceMapping> ScheduleResourceMapping { get; set; }
+        public DbSet<JobExecutionLog> JobExecutionLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,11 +35,11 @@ namespace Infrastructure.Schedule
             //     .HasConversion(
             //         new EnumToStringConverter<ScheduleSubType>()
             //     );
-            
+
             // modelBuilder.Entity<Domain.Schedule.Schedule>()
             //     .Property(e => e.Status)
             //     .HasConversion(new EnumToStringConverter<ScheduleStatus>());
-            
+
             // Value comparer for StartDays collection
             var startDaysComparer = new ValueComparer<List<Days>>(
                 (c1, c2) => JsonConvert.SerializeObject(c1) == JsonConvert.SerializeObject(c2),
@@ -54,10 +56,28 @@ namespace Infrastructure.Schedule
             modelBuilder.Entity<ScheduleResourceMapping>()
                 .Property(e => e.ResourceType)
                 .HasConversion(new EnumToStringConverter<Resources>());
-            
+
             modelBuilder
                 .Entity<ScheduleResourceMapping>()
                 .HasKey(pvs =>   pvs.Id);
+
+            modelBuilder.Entity<JobExecutionLog>()
+                .Property(e => e.Status)
+                .HasConversion(new EnumToStringConverter<JobExecutionStatus>());
+
+            modelBuilder.Entity<JobExecutionLog>(entity =>
+            {
+              entity.ToTable("job_execution_logs", schema: "scheduler");
+
+              entity.Property(e => e.Id).HasColumnName("id");
+              entity.Property(e => e.JobName).HasColumnName("job_name");
+              entity.Property(e => e.JobGroup).HasColumnName("job_group");
+              entity.Property(e => e.FiredAt).HasColumnName("fired_at");
+              entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+              entity.Property(e => e.Status).HasColumnName("status");
+              entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+              entity.Property(e => e.DurationMs).HasColumnName("duration_ms");
+            });
 
             base.OnModelCreating(modelBuilder);
         }

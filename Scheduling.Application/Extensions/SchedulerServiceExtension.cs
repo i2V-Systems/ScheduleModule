@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Application.Listeners;
 using Application.Schedule.ScheduleEvent.Scheduler;
 using Coravel;
 using Hangfire;
@@ -37,6 +38,9 @@ public static class SchedulerServiceExtensions
             // Add scheduler identity for clustering
             q.SchedulerId = "MyScheduler";
             q.SchedulerName = "MyQuartzScheduler";
+            
+            // Add job execution listener
+            q.AddJobListener<JobExecutionListener>();
             
             // Use persistent job store
             q.UsePersistentStore(s =>
