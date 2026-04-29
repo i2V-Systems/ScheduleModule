@@ -27,8 +27,10 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
         <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.2.0" />
-		<Content Include="ScheduleScripts\quartz.sql" CopyToPublishDirectory="Always" />
+        <Content Include="ScheduleScripts\quartz.sql" CopyToPublishDirectory="Always" />
 		<Content Include="ScheduleScripts\scheduleScripts.sql" CopyToPublishDirectory="Always" />
+		<Content Include="ScheduleScripts\quartz.sql" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
+		<Content Include="ScheduleScripts\scheduleScripts.sql" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" />
     </ItemGroup>
 
   

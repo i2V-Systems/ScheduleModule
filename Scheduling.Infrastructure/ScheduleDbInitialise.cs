@@ -20,7 +20,8 @@ public static class ScheduleDbInitialise
         scriptPath
       );
 #else
-            path = System.IO.Path.Combine("./ScheduleScripts", scriptPath);
+            // path = System.IO.Path.Combine("./ScheduleScripts", scriptPath);
+            path = System.IO.Path.Combine(AppContext.BaseDirectory, "ScheduleScripts", scriptPath);
 #endif
 
       string script = File.ReadAllText(path);
@@ -40,7 +41,7 @@ public static class ScheduleDbInitialise
     }
     finally
     {
-      connection.Close();
+      connection?.Close();
     }
   }
 
