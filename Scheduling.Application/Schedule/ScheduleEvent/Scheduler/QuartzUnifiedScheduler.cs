@@ -288,7 +288,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
             .RequestRecovery(true) // Enable recovery
             .StoreDurably(true)   // Keep job even if no triggers
             .UsingJobData("scheduleId", metadata.scheduleId)
-            .UsingJobData("EventType", metadata.eventType.ToString())
+            .UsingJobData("eventType", metadata.eventType.ToString())
             .Build();
     }
 
