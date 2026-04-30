@@ -35,12 +35,12 @@ public class TopicDispatcherJob : IJob
             if (context.Recovering)
             {
                 Log.Information("RECOVERING missed job execution for: {JobKey} at {RecoveryTime}",
-                    jobKey, DateTimeOffset.Now);
+                    jobKey, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             }
             else
             {
                 Log.Information("Normal job execution for: {JobKey} at {ExecutionTime}",
-                    jobKey, DateTimeOffset.Now);
+                    jobKey, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             }
 
             var data = context.MergedJobDataMap;
@@ -110,6 +110,7 @@ public class TopicDispatcherJob : IJob
 
         _logger.LogInformation("Processing {TopicCount} topics with {HandlerCount} handlers",
             topics.Count, handlers.Count);
+        _logger.LogInformation($"Scheduled task '{eventTrigger.eventType}' triggered at {eventTrigger.triggeredAt} with scheduleID: {eventTrigger.scheduleId}");
 
         // Process each topic with all interested handlers
         foreach (var topic in topics)
