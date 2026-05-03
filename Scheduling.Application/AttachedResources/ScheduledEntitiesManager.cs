@@ -69,35 +69,14 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
              .ToList();
      }
 
-     public bool IsResourceLoaded(Guid mappingId)
-     {
-         return ScheduleResourcesMap.ContainsKey(mappingId);
-     }
-
-
-    public int GetLoadedResourceCount()
-    {
-        return ScheduleResourcesMap.Count;
-    }
-
 
     public List<ScheduleResourceDto> GetAllCachedResources()
     {
         return ScheduleResourcesMap.Values.ToList();
     }
 
-    public async Task RefreshCacheAsync()
-    {
-        // Clear existing cache
-        ScheduleResourcesMap.Clear();
 
-        // Reload from database
-        await InitializeAsync();
-    }
-
-
-
-        public async Task LoadScheduleResourceMapping()
+        private async Task LoadScheduleResourceMapping()
         {
             try
             {
@@ -126,11 +105,6 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 ScheduleResourcesMap.TryRemove(mapId, out _);
             }
         }
-        public  void RemoveFromMemory(Guid mapId)
-        {
-            ScheduleResourcesMap.TryRemove(mapId, out _);
-        }
-
         public async Task AddScheduleResourceMap(ScheduleResourceDto map)
         {
             try

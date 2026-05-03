@@ -86,14 +86,6 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        // Query methods implementation
-        public IEnumerable<ScheduleDto> GetSchedulesByIds(IEnumerable<Guid> ids)
-        {
-            return ids.Where(id => Schedules.ContainsKey(id))
-                .Select(id => Schedules[id])
-                .ToList();
-        }
-
         public ScheduleDto? GetScheduleFromCache(Guid id)
         {
             return Schedules.TryGetValue(id, out var schedule) ? schedule : null;
@@ -109,15 +101,9 @@ namespace Application.Schedule.ScheduleObj
         }
 
 
-        // Cache status methods
         public bool IsScheduleLoaded(Guid scheduleId)
         {
             return Schedules.ContainsKey(scheduleId);
-        }
-
-        public int GetLoadedScheduleCount()
-        {
-            return Schedules.Count;
         }
 
         public IEnumerable<ScheduleDto> GetAllCachedSchedules()
@@ -125,22 +111,10 @@ namespace Application.Schedule.ScheduleObj
             return Schedules.Values.ToList();
         }
 
-        public async Task RefreshCacheAsync()
-        {
-            // Clear existing cache
-            Schedules.Clear();
-            ScheduleDetailsMap.Clear();
-
-            // Reload from database
-            await InitializeAsync();
-        }
-
-
-
         public ScheduleDto Get(Guid id) =>
             Schedules.TryGetValue(id, out var schedule) ? schedule : null;
 
-        public ScheduleAllDetails GetDetailed(Guid id)
+        private ScheduleAllDetails GetDetailed(Guid id)
         {
             return ScheduleDetailsMap.TryGetValue(id, out var schedule) ? schedule : null;
         }
@@ -212,24 +186,6 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public IEnumerable<ScheduleDto> GetAllSchedules()
-        {
-            try
-            {
-                if (ScheduleDetailsMap.IsEmpty)
-                {
-                    UpdateScheduleDetails(Schedules.Values);
-                }
-
-                return Schedules.Values;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("[ScheduleManager][GetScheduleWithAllDetails] : {Message}", ex.Message);
-                return null;
-            }
-        }
-
         public async Task UpdateMultipleSchedulesAsync(List<ScheduleAllDetails> schedules)
         {
             using var scope = _serviceProvider.CreateScope();
@@ -287,7 +243,7 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public void AddOrUpdateScheduleDetails(ScheduleAllDetails details)
+        private void AddOrUpdateScheduleDetails(ScheduleAllDetails details)
         {
             try
             {
@@ -350,7 +306,7 @@ namespace Application.Schedule.ScheduleObj
 
         }
 
-        public void RemoveFromMemory(Guid id)
+        private void RemoveFromMemory(Guid id)
         {
             Schedules.TryRemove(id, out _);
             _scheduledEntitiesManager.RemoveFromMemorywithScheduleId(id);
@@ -358,7 +314,7 @@ namespace Application.Schedule.ScheduleObj
         }
 
 
-        public void AddToMemory(ScheduleDto schedule)
+        private void AddToMemory(ScheduleDto schedule)
         {
             Schedules.TryAdd(schedule.Id, schedule);
             AddOrUpdateScheduleDetails(new ScheduleAllDetails { schedules = schedule });
@@ -414,7 +370,7 @@ namespace Application.Schedule.ScheduleObj
           return affectedSchedules;
         }
 
-        public Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule)
+        private Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule)
         {
           var objectToSend =
             new Dictionary<string, dynamic>()

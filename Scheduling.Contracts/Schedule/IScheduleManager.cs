@@ -1,52 +1,29 @@
-using CommonUtilityModule.CrudUtilities;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule.DTOs;
-using TanvirArjel.Extensions.Microsoft.DependencyInjection;
 
 namespace Scheduling.Contracts.Schedule;
 
 public interface IScheduleManager
 {
-        // Initialization and lifecycle
-         Task InitializeAsync();
+    Task InitializeAsync();
 
-        // Query methods for dictionary access
-        IEnumerable<ScheduleDto> GetSchedulesByIds(IEnumerable<Guid> ids);
-        ScheduleDto? GetScheduleFromCache(Guid id);
-        ScheduleAllDetails? GetScheduleDetailsFromCache(Guid id);
+    ScheduleDto? GetScheduleFromCache(Guid id);
+    ScheduleAllDetails? GetScheduleDetailsFromCache(Guid id);
 
-        // Cache status methods
-        bool IsScheduleLoaded(Guid scheduleId);
-        int GetLoadedScheduleCount();
+    bool IsScheduleLoaded(Guid scheduleId);
+    IEnumerable<ScheduleDto> GetAllCachedSchedules();
 
-        // Bulk cache operations
-        IEnumerable<ScheduleDto> GetAllCachedSchedules();
-        Task RefreshCacheAsync();
+    ScheduleDto Get(Guid id);
+    Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto, string userId = null);
+    Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto dto);
+    Task DeleteScheduleAsync(Guid id);
 
-        // Core CRUD operations
-        ScheduleDto Get(Guid id);
-        ScheduleAllDetails GetDetailed(Guid id);
-        Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto, string userId = null);
-        Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto dto);
-        Task DeleteScheduleAsync(Guid id);
+    Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(string userName);
 
-        // Complex queries
-        Task<IEnumerable<ScheduleAllDetails>> GetScheduleWithAllDetails(string userName);
-        IEnumerable<ScheduleDto> GetAllSchedules();
+    Task<ScheduleAllDetails> UpdateInMemory(ScheduleDto schedule);
+    bool IsScheduleNameAvailable(string name, Guid? id = null);
+    Task<List<ScheduleAllDetails>> CreateAndUpdateResourceMapping(ScheduleResourceDto resourceMap);
 
-        // Memory management operations
-        void AddToMemory(ScheduleDto schedule);
-        Task<ScheduleAllDetails> UpdateInMemory(ScheduleDto schedule);
-        void RemoveFromMemory(Guid id);
-        void AddOrUpdateScheduleDetails(ScheduleAllDetails details);
-        bool IsScheduleNameAvailable(string name,Guid? id=null);
-        Task<List<ScheduleAllDetails>> CreateAndUpdateResourceMapping(ScheduleResourceDto resourceMap);
-
-        // Bulk operations
-        Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids);
-        Task UpdateMultipleSchedulesAsync(List<ScheduleAllDetails> schedules);
-        Dictionary<string, dynamic> GetAllDetailNotificationObj(List<ScheduleAllDetails> updatedSchedule);
-
-        // Cross-cutting concerns
-
+    Task DeleteMultipleSchedulesAsync(IEnumerable<Guid> ids);
+    Task UpdateMultipleSchedulesAsync(List<ScheduleAllDetails> schedules);
 }
