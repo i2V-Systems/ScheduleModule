@@ -23,36 +23,47 @@ public class JobExecutionListener : IJobListener
     {
         // store fired time in context for duration calc later
         context.Put("firedAt", DateTime.UtcNow);
-
+        var logId = Guid.NewGuid();
+        var firedAt = DateTime.UtcNow;
         await SaveLogAsync(new JobExecutionLog
         {
-            Id = Guid.NewGuid(),
-            JobName = context.JobDetail.Key.Name,
-            JobGroup = context.JobDetail.Key.Group,
-            FiredAt = DateTime.UtcNow,
-            Status = JobExecutionStatus.Started
+          Id = logId,
+          JobName = context.JobDetail.Key.Name,
+          JobGroup = context.JobDetail.Key.Group,
+          TriggerName = context.Trigger.Key.Name,
+          TriggerGroup = context.Trigger.Key.Group,
+          TriggerDescription = context.Trigger.Description,
+          ScheduledFireTime = context.ScheduledFireTimeUtc?.UtcDateTime,
+          NextFireTime = context.NextFireTimeUtc?.UtcDateTime,
+          FiredAt = firedAt,
+          Status = JobExecutionStatus.Started
         }, ct);
     }
 
     public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException? jobException, CancellationToken ct = default)
     {
-        var firedAt = (DateTime)context.Get("firedAt");
-        var duration = (long)(DateTime.UtcNow - firedAt).TotalMilliseconds;
+      var logId = (Guid)context.Get("logId");
+      var firedAt = (DateTime)context.Get("firedAt");
+      var completedAt = DateTime.UtcNow;
+      var duration = (long)(completedAt - firedAt).TotalMilliseconds;
 
-        var log = new JobExecutionLog
-        {
-            Id = Guid.NewGuid(),
-            JobName = context.JobDetail.Key.Name,
-            JobGroup = context.JobDetail.Key.Group,
-            FiredAt = firedAt,
-            CompletedAt = DateTime.UtcNow,
-            DurationMs = duration,
-            Status = jobException is null ? JobExecutionStatus.Completed : JobExecutionStatus.Failed,
-            ErrorMessage = jobException?.Message
-        };
+      await using var scope = _scopeFactory.CreateAsyncScope();
+      var repo = scope.ServiceProvider.GetRequiredService<IJobExecutionLogRepository>();
 
-        await SaveLogAsync(log, ct);
-        _logger.LogInformation("Job {JobName} {Status} in {Duration}ms", log.JobName, log.Status, duration);
+      var log = await repo.GetByIdAsync(logId, ct);   // fetch the Started row
+      if (log is not null)
+      {
+        log.CompletedAt = completedAt;
+        log.DurationMs = duration;
+        log.Status = jobException is null ? JobExecutionStatus.Completed : JobExecutionStatus.Failed;
+        log.ErrorMessage = jobException?.Message;
+        await repo.UpdateAsync(log, ct);
+      }
+
+      _logger.LogInformation("Job {JobName} {Status} in {Duration}ms",
+        context.JobDetail.Key.Name,
+        jobException is null ? JobExecutionStatus.Completed : JobExecutionStatus.Failed,
+        duration);
     }
 
     public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken ct = default)

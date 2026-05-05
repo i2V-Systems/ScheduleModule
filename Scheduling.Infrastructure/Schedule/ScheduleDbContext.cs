@@ -72,9 +72,16 @@ namespace Infrastructure.Schedule
               entity.Property(e => e.Id).HasColumnName("id");
               entity.Property(e => e.JobName).HasColumnName("job_name");
               entity.Property(e => e.JobGroup).HasColumnName("job_group");
+              entity.Property(e => e.TriggerName).HasColumnName("trigger_name");
+              entity.Property(e => e.TriggerGroup).HasColumnName("trigger_group");
+              entity.Property(e => e.TriggerDescription).HasColumnName("trigger_description");
               entity.Property(e => e.FiredAt).HasColumnName("fired_at");
+              entity.Property(e => e.ScheduledFireTime).HasColumnName("scheduled_fire_time");
+              entity.Property(e => e.NextFireTime).HasColumnName("next_fire_time");
               entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
-              entity.Property(e => e.Status).HasColumnName("status");
+              entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasConversion(new EnumToStringConverter<JobExecutionStatus>());
               entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
               entity.Property(e => e.DurationMs).HasColumnName("duration_ms");
             });

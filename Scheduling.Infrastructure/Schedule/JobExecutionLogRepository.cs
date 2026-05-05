@@ -33,4 +33,16 @@ internal class JobExecutionLogRepository : IJobExecutionLogRepository
             .OrderByDescending(x => x.FiredAt)
             .ToListAsync(ct);
     }
+
+    public async Task<JobExecutionLog?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+      return await _context.JobExecutionLogs
+        .FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
+
+    public async Task UpdateAsync(JobExecutionLog log, CancellationToken ct = default)
+    {
+      _context.JobExecutionLogs.Update(log);
+      await _context.SaveChangesAsync(ct);
+    }
 }
