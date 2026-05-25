@@ -18,55 +18,49 @@ public class Schedule : BaseEntity
     public ScheduleStatus Status { get; set; } = ScheduleStatus.Enabled;
     public DateTime? RecurringTime { get;  set; }
 
-    public DateTime GetLocalStartTime()
-    {
-        return TimeZoneInfo.ConvertTimeFromUtc(StartDateTime, TimeZoneInfo.Local);
-    }
-    
-    public DateTime? GetLocalEndTime()
-    {
-        return EndDateTime==null?TimeZoneInfo.ConvertTimeFromUtc(EndDateTime??new DateTime(), TimeZoneInfo.Local):null;
-    }
-
     // Property to store StartDateTime in UTC and retrieve in local time
     public DateTime StartDateTime
     {
         get => _startDateTime;
-        set => _startDateTime = value.Kind == DateTimeKind.Utc ? value : value.ToUniversalTime();
+        set => _startDateTime = value.Kind switch
+        {
+          DateTimeKind.Utc => value,
+          DateTimeKind.Local => value.ToUniversalTime(),
+          // Unspecified: treat as UTC — don't convert
+          DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+          _ => value
+        };
     }
     public DateTime? EndDateTime
     {
         get => _endDateTime;
         set
         {
-            if (value.HasValue)
-            {
-                _endDateTime = value.Value.Kind == DateTimeKind.Utc 
-                    ? value.Value 
-                    : value.Value.ToUniversalTime();
-            }
-            else
-            {
-                _endDateTime = null;
-            }
+          if (!value.HasValue)
+          {
+            _endDateTime = null;
+            return;
+          }
+
+          _endDateTime = value.Value.Kind switch
+          {
+            DateTimeKind.Utc => value.Value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            // Unspecified: treat as UTC — don't convert
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc),
+            _ => value.Value
+          };
         }
     }
-        
+
     public string? StartCronExp { get; set; }
     public string? StopCronExp { get; set; }
-    
-    public void ConvertToUTC()
-    {
-        StartDateTime = StartDateTime.ToUniversalTime();
-        EndDateTime = EndDateTime?.ToUniversalTime();
-    }
 
     public Schedule()
     {
         StartDays = new List<Days>();
-
     }
-   
+
 
     public Schedule(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,
         List<Days> startDays, ScheduleStatus enabled, DateTime startTime, DateTime endTime, DateTime? recurringTime)
@@ -83,50 +77,24 @@ public class Schedule : BaseEntity
         EndDateTime = endTime;
         RecurringTime = recurringTime;
     }
-   
+
     private static void ValidateSchedule(string name, ScheduleType type, string details,
         DateTime startTime, DateTime endTime)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("name cannot be empty.");
-        
+
         if (string.IsNullOrWhiteSpace(details))
             throw new DomainException("details cannot be empty.");
-        
+
         if (type < 0)
             throw new DomainException("type cannot be negative.");
-        
+
         if (startTime== default(DateTime))
             throw new DomainException("Start time cannot be empty.");
-        
+
         if (endTime== default(DateTime))
             throw new DomainException("End time cannot be empty.");
-        
-    }
-    public void UpdateDetails(string name, ScheduleType type, ScheduleSubType? subType, string details, int? noOfdays,
-        List<Days> startDays, DateTime startTime, DateTime endTime,DateTime? recurringTime)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("name cannot be empty.");
-        
-        if (string.IsNullOrWhiteSpace(details))
-            throw new DomainException("details cannot be empty.");
-        
-        if (type <= 0)
-            throw new DomainException("Type must be positive.");
-        
-        Name = name;
-        Details = details;
-        Type = type;
-        SubType = subType;
-        NoOfDays = noOfdays;
-        StartDays = startDays;
-        StartDateTime = startTime;
-        EndDateTime = endTime;
-        RecurringTime = recurringTime;
-    }
-    public void UpdateStatus(ScheduleStatus state)
-    {
-        Status =state==ScheduleStatus.Enabled ? ScheduleStatus.Enabled : ScheduleStatus.Disabled;
+
     }
 }
