@@ -50,8 +50,8 @@ public class TopicDispatcherJob : IJob
             string eventTypeString = string.Empty;
             string topicsJson = "[]";
 
-            if (data.TryGetValue("scheduleId", out var scheduleObj) &&
-                Guid.TryParse(scheduleObj?.ToString(), out var parsedScheduleId))
+            if (data.TryGetValue("scheduleId", out var scheduleIdValue) &&
+                Guid.TryParse(scheduleIdValue?.ToString(), out var parsedScheduleId))
             {
               scheduleId = parsedScheduleId;
             }
@@ -61,9 +61,9 @@ public class TopicDispatcherJob : IJob
               eventTypeString = eventTypeObj?.ToString() ?? string.Empty;
             }
 
-            if (data.TryGetValue("topics", out var topicsObj))
+            if (data.TryGetValue("topics", out var topicsList))
             {
-              topicsJson = topicsObj?.ToString() ?? "[]";
+              topicsJson = topicsList?.ToString() ?? "[]";
             }
 
             // Parse topics from JSON
