@@ -46,9 +46,25 @@ public class TopicDispatcherJob : IJob
             var data = context.MergedJobDataMap;
 
             // Extract job data
-            var scheduleId = Guid.Parse(data.GetString("scheduleId") ?? string.Empty);
-            var eventTypeString = data.GetString("eventType") ?? string.Empty;
-            var topicsJson = data.GetString("topics") ?? "[]";
+            Guid scheduleId = Guid.Empty;
+            string eventTypeString = string.Empty;
+            string topicsJson = "[]";
+
+            if (data.TryGetValue("scheduleId", out var scheduleIdValue) &&
+                Guid.TryParse(scheduleIdValue?.ToString(), out var parsedScheduleId))
+            {
+              scheduleId = parsedScheduleId;
+            }
+
+            if (data.TryGetValue("eventType", out var eventTypeObj))
+            {
+              eventTypeString = eventTypeObj?.ToString() ?? string.Empty;
+            }
+
+            if (data.TryGetValue("topics", out var topicsList))
+            {
+              topicsJson = topicsList?.ToString() ?? "[]";
+            }
 
             // Parse topics from JSON
             var topicStrings = JsonConvert.DeserializeObject<List<string>>(topicsJson) ?? new List<string>();
