@@ -120,3 +120,10 @@ END IF;
 END$$;
 
 
+ALTER TABLE public."Schedule"
+ALTER COLUMN "StartDateTime" TYPE timestamp with time zone
+  USING "StartDateTime" AT TIME ZONE 'UTC';
+
+ALTER TABLE public."Schedule"
+ALTER COLUMN "EndDateTime" TYPE timestamp with time zone
+  USING "EndDateTime" AT TIME ZONE 'UTC';
