@@ -1,6 +1,7 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Domain.Exceptions;
 using Domain.Schedule;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Scheduling.Contracts.Schedule.DTOs;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
@@ -14,15 +15,28 @@ namespace Application.Schedule.ScheduleObj
         private IScheduleRepository<Domain.Schedule.Schedule> _schedulesRepository;
      
         private readonly ILogger<ScheduleCrudService> _logger;
-        public ScheduleCrudService(IMapper mapper,
-           IScheduleRepository<Domain.Schedule.Schedule> scheduleRepository,ILogger<ScheduleCrudService> logger)
-        {
-            _logger = logger?? throw new ArgumentNullException(nameof(logger));
-            _schedulesRepository = scheduleRepository;
-            _mapper = mapper;
-        }
+    private readonly Guid _userId;
 
-        public async Task<ScheduleDto> GetByIdAsync(Guid id)
+    public ScheduleCrudService(
+        IMapper mapper,
+        IScheduleRepository<Domain.Schedule.Schedule> scheduleRepository,
+        ILogger<ScheduleCrudService> logger,
+        IHttpContextAccessor httpContextAccessor)
+    {
+      _logger = logger;
+      _schedulesRepository = scheduleRepository;
+      _mapper = mapper;
+
+      var httpContext = httpContextAccessor.HttpContext;
+
+      if (httpContext != null &&
+          httpContext.Request.Headers.TryGetValue("Userid", out var userId))
+      {
+        _userId = Guid.Parse(userId);
+      }
+    }
+
+    public async Task<ScheduleDto> GetByIdAsync(Guid id)
         {
             try
             {
@@ -49,7 +63,7 @@ namespace Application.Schedule.ScheduleObj
                 throw;
             }
         }
-        public async Task<bool> ExistAsync(Guid id,string userName="")
+        public async Task<bool> ExistAsync(Guid id)
         {
             try
             {
@@ -63,14 +77,14 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto,Guid userId, string userName = "")
+        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto)
         {
             try
             {
-                _logger.LogInformation("Creating schedule {ScheduleName} by {UserName}", dto.Name, userName);
+                _logger.LogInformation("Creating schedule {ScheduleName} by {UserId}", dto.Name, _userId);
 
                 var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
-                await _schedulesRepository.AddAsync(schedule,userId);
+                await _schedulesRepository.AddAsync(schedule, _userId);
 
                 _logger.LogInformation("Schedule created with ID {ScheduleId}", schedule.Id);
                 dto= _mapper.Map<ScheduleDto>(schedule);
@@ -83,17 +97,17 @@ namespace Application.Schedule.ScheduleObj
             }
         }
         
-        public async Task DeleteAsync(Guid entityId,Guid userId, string userName = "")
+        public async Task DeleteAsync(Guid entityId)
         {
                try
             {
-                _logger.LogInformation("Deleting schedule {ScheduleId} by {UserName}", entityId, userName);
+                _logger.LogInformation("Deleting schedule {ScheduleId} by {UserId}", entityId, _userId);
 
                 var entity = await _schedulesRepository.GetAsync(entityId);
                 if (entity == null)
                     throw new NotFoundException($"Schedule with ID {entityId} not found");
 
-                _schedulesRepository.Delete(entity,userId);
+                _schedulesRepository.Delete(entity, _userId);
 
                 _logger.LogInformation("Schedule {ScheduleId} deleted successfully", entityId);
             }
@@ -104,18 +118,18 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task UpdateAsync(ScheduleDto dto,Guid userId, string userName = "")
+        public async Task UpdateAsync(ScheduleDto dto)
         {
             try
             {
-                _logger.LogInformation("Updating schedule {ScheduleId} by {UserName}", dto.Id, userName);
+                _logger.LogInformation("Updating schedule {ScheduleId} by {UserId}", dto.Id, _userId);
                 var existingEntity = await _schedulesRepository.GetAsync(dto.Id);
                 if (existingEntity == null)
                     throw new NotFoundException($"Schedule with ID {dto.Id} not found");
 
                 // Update domain entity from DTO
                 var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
-                _schedulesRepository.Update(schedule,userId);
+                _schedulesRepository.Update(schedule, _userId);
 
                 _logger.LogInformation("Schedule {ScheduleId} updated successfully", dto.Id);
             }

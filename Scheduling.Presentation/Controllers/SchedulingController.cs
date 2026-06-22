@@ -1,4 +1,4 @@
-﻿using CommonUtilityModule.CrudUtilities;
+using CommonUtilityModule.CrudUtilities;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +42,6 @@ namespace Presentation.Controllers
         {
             try
             {
-                HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
                 return Ok(await  _scheduleManager.GetScheduleWithAllDetails());
             }
             catch (Exception ex)
@@ -79,8 +78,6 @@ namespace Presentation.Controllers
         {
             try
             {
-                HttpContext.Request.Headers.TryGetValue("userid", out StringValues userid);
-
                 if (schedule.schedules == null || string.IsNullOrWhiteSpace(schedule.schedules.Name))
                 {
                     return BadRequest("Schedule name is required");
@@ -95,7 +92,7 @@ namespace Presentation.Controllers
                     });
                 }
 
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.CreateScheduleAsync(schedule.schedules, userid!);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.CreateScheduleAsync(schedule.schedules);
                 return Ok(scheduleAllDetails.schedules);
             }
             catch (Exception ex)
@@ -184,7 +181,6 @@ namespace Presentation.Controllers
         [HttpPut("UpdateMultiple")]
         public async Task<IActionResult> UpdateMultiple([FromBody] List<ScheduleAllDetails> schedulesToUpdate)
         {
-            HttpContext.Request.Headers.TryGetValue("Username", out StringValues userName);
             if (!ModelState.IsValid)
             {
                 return BadRequest();

@@ -1,6 +1,7 @@
 using Application.Schedule;
 using AutoMapper;
 using Domain.AttachedResources;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
@@ -13,20 +14,31 @@ public class ResourceMappingService :IScheduleResourceService
     private readonly IScheduleRepository<ScheduleResourceMapping> _resourceRepository;
     private readonly ILogger<ResourceMappingService> _logger;
     private readonly IMapper _mapper;
+    private readonly Guid _userId;
     public ResourceMappingService(IMapper mapper,
-        IScheduleRepository<ScheduleResourceMapping> scheduleResourceRepository,ILogger<ResourceMappingService> logger)
+        IScheduleRepository<ScheduleResourceMapping> scheduleResourceRepository,
+        ILogger<ResourceMappingService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _logger = logger?? throw new ArgumentNullException(nameof(logger));
         _resourceRepository = scheduleResourceRepository;
         _mapper = mapper;
+
+        var httpContext = httpContextAccessor.HttpContext;
+
+        if (httpContext != null &&
+            httpContext.Request.Headers.TryGetValue("Userid", out var userId))
+        {
+            _userId = Guid.Parse(userId);
+        }
     }
 
-    public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto,Guid userId)
+    public async Task<ScheduleResourceDto> AddResourceMappingAsync(ScheduleResourceDto dto)
     {
         try
         {
             var resource = _mapper.Map<Domain.AttachedResources.ScheduleResourceMapping>(dto);
-            await _resourceRepository.AddAsync(resource,userId);
+            await _resourceRepository.AddAsync(resource,_userId);
 
             _logger.LogInformation("mapping created with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
@@ -38,12 +50,12 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
-    public  async Task<ScheduleResourceDto> UpdateResourceMappingAsync(ScheduleResourceDto dto,Guid userId)
+    public  async Task<ScheduleResourceDto> UpdateResourceMappingAsync(ScheduleResourceDto dto)
     {
         try
         {
             var resource = _mapper.Map<ScheduleResourceMapping>(dto);
-            _resourceRepository.Update(resource,userId);
+            _resourceRepository.Update(resource,_userId);
 
             _logger.LogInformation("mapping updated with ID {ScheduleId}", resource.Id);
             dto= _mapper.Map<ScheduleResourceDto>(resource);
@@ -69,14 +81,14 @@ public class ResourceMappingService :IScheduleResourceService
             throw;
         }
     }
-    public async Task DeleteResourceMappingAsync(Guid mappingId,Guid userId)
+    public async Task DeleteResourceMappingAsync(Guid mappingId)
     {
         try
         {
             var entity = await _resourceRepository.GetAsync(mappingId);
             if (entity != null)
             {
-                _resourceRepository.Delete(entity,userId);
+                _resourceRepository.Delete(entity,_userId);
             }
         }
         catch (Exception ex)
@@ -86,12 +98,12 @@ public class ResourceMappingService :IScheduleResourceService
         }
     }
 
-    public async Task<Guid> DeleteResourceSchdeuleMappingAsync(DetachScheduleResourceDto mapping,Guid userId)
+    public async Task<Guid> DeleteResourceSchdeuleMappingAsync(DetachScheduleResourceDto mapping)
     {
       try
       {
         var entity = await _resourceRepository.FindAsync(item => item.ScheduleId == mapping.ScheduleId && item.ResourceId == mapping.ResourceId);
-        _resourceRepository.Delete(entity,userId);
+        _resourceRepository.Delete(entity,_userId);
         return entity.Id;
       }
       catch (Exception ex)

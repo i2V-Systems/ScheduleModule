@@ -17,7 +17,6 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private Guid userId;
     public static ConcurrentDictionary<Guid, ScheduleResourceDto> ScheduleResourcesMap { get; } = new();
     public event EventHandler<ScheduleResourceDto> ScheduleResourcePublish;
 
@@ -29,14 +28,6 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         // InitializeAsync();
         _httpContextAccessor = httpContextAccessor;
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (
-            httpContext != null
-            && httpContext.Request.Headers.TryGetValue("Userid", out var userid)
-        )
-        {
-            userId = new Guid(userid);
-        }
     }
 
 
@@ -138,7 +129,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
             {
                 using var scope = _serviceProvider.CreateScope();
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
-                var dto= await crudService.AddResourceMappingAsync(map,userId);
+                var dto= await crudService.AddResourceMappingAsync(map);
                 ScheduleResourcesMap.TryAdd(dto.Id , dto);
             }
             catch (Exception ex)
@@ -155,7 +146,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 using var scope = _serviceProvider.CreateScope();
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
                 ScheduleResourcesMap.TryGetValue(map.Id , out var oldMap);
-                var dto= await crudService.UpdateResourceMappingAsync(map,userId);
+                var dto= await crudService.UpdateResourceMappingAsync(map);
                 ScheduleResourcesMap.TryUpdate(map.Id , dto,oldMap);
             }
             catch (Exception ex)
@@ -170,7 +161,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 using var scope = _serviceProvider.CreateScope();
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
 
-                await crudService.DeleteResourceMappingAsync(id,userId);
+                await crudService.DeleteResourceMappingAsync(id);
 
                 var mapEntry = ScheduleResourcesMap
                     .FirstOrDefault(m => m.Value.Id == id);
@@ -222,7 +213,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
             var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
             foreach (var mapping in resources)
             {
-              Guid mappingId = await crudService.DeleteResourceSchdeuleMappingAsync(mapping,userId);
+              Guid mappingId = await crudService.DeleteResourceSchdeuleMappingAsync(mapping);
               ScheduleResourcesMap.TryRemove(mappingId, out var map);
             }
 
@@ -244,7 +235,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
                 var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
                 foreach (var id in ids)
                 {
-                    await crudService.DeleteResourceMappingAsync(id, userId);
+                    await crudService.DeleteResourceMappingAsync(id);
                     List<Guid>mappingIds=  ScheduleResourcesMap
                         .Where(s => s.Key == id)
                         .Select(t => t.Key).ToList();
