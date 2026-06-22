@@ -63,7 +63,7 @@ namespace Application.Schedule.ScheduleObj
                 throw;
             }
         }
-        public async Task<bool> ExistAsync(Guid id,string userName="")
+        public async Task<bool> ExistAsync(Guid id)
         {
             try
             {
@@ -77,11 +77,11 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto, string userName = "")
+        public async Task<ScheduleDto> AddAsync(ScheduleDto  dto)
         {
             try
             {
-                _logger.LogInformation("Creating schedule {ScheduleName} by {UserName}", dto.Name, userName);
+                _logger.LogInformation("Creating schedule {ScheduleName} by {UserId}", dto.Name, _userId);
 
                 var schedule = _mapper.Map<Domain.Schedule.Schedule>(dto);
                 await _schedulesRepository.AddAsync(schedule, _userId);
@@ -97,11 +97,11 @@ namespace Application.Schedule.ScheduleObj
             }
         }
         
-        public async Task DeleteAsync(Guid entityId, string userName = "")
+        public async Task DeleteAsync(Guid entityId)
         {
                try
             {
-                _logger.LogInformation("Deleting schedule {ScheduleId} by {UserName}", entityId, userName);
+                _logger.LogInformation("Deleting schedule {ScheduleId} by {UserId}", entityId, _userId);
 
                 var entity = await _schedulesRepository.GetAsync(entityId);
                 if (entity == null)
@@ -118,11 +118,11 @@ namespace Application.Schedule.ScheduleObj
             }
         }
 
-        public async Task UpdateAsync(ScheduleDto dto,string userName = "")
+        public async Task UpdateAsync(ScheduleDto dto)
         {
             try
             {
-                _logger.LogInformation("Updating schedule {ScheduleId} by {UserName}", dto.Id, userName);
+                _logger.LogInformation("Updating schedule {ScheduleId} by {UserId}", dto.Id, _userId);
                 var existingEntity = await _schedulesRepository.GetAsync(dto.Id);
                 if (existingEntity == null)
                     throw new NotFoundException($"Schedule with ID {dto.Id} not found");
