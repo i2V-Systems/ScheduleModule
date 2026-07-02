@@ -16,7 +16,7 @@ namespace Presentation;
 public enum SchedulerType
 {
     Coravel,
-    Hangfire
+    // Hangfire
 }
 
 public static class ScheduleModuleRegistration
