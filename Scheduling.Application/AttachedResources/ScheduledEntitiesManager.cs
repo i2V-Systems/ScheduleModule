@@ -135,7 +135,7 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
             catch (Exception ex)
             {
 
-                Log.Error("Error in ResourceManager AddScheduleResourceMap ",ex.Message);
+                Log.Error("Error in ResourceManager AddScheduleResourceMap: {msg} ",ex.Message);
             }
         }
 
@@ -213,10 +213,12 @@ internal class ScheduledEntitiesManager : IScheduledEntitiesManager
             var crudService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
             foreach (var mapping in resources)
             {
-              Guid mappingId = await crudService.DeleteResourceSchdeuleMappingAsync(mapping);
-              ScheduleResourcesMap.TryRemove(mappingId, out var map);
+              if (ScheduleResourcesMap.Values.Any(item => item.ScheduleId == mapping.ScheduleId && item.ResourceId == mapping.ResourceId))
+              {
+                Guid mappingId = await crudService.DeleteResourceSchdeuleMappingAsync(mapping);
+                ScheduleResourcesMap.TryRemove(mappingId, out var map);
+              }
             }
-
           }
           catch (Exception ex)
           {
