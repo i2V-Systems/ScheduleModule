@@ -1,8 +1,6 @@
 using System.Text.Json;
 using Application.Schedule.ScheduleEvent.Scheduler;
 using Coravel;
-using Hangfire;
-using Hangfire.PostgreSql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -23,7 +21,6 @@ public static class SchedulerServiceExtensions
         return schedulingService.ToLowerInvariant() switch
         {
             // "coravel" => services.AddCoravelScheduler(),
-            // "hangfire" => services.AddHangfireScheduler(configuration),
             "quartz" => services.AaddQuartzScheduler(configuration),
             _ => throw new InvalidOperationException($"Unsupported scheduler: {schedulingService}")
         };
