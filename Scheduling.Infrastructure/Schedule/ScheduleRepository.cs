@@ -36,13 +36,6 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 _context.Set<T>().Add(entity);
                 _context.SaveChanges();
                 this.DetachEntity(entity);
-                String tablename = GetTableNameByEntityType(entity);
-                LoggingManager.NotifyLogger<T>(
-                    entity.Id,
-                    tablename,
-                    UserActivityTypeEnum.Post,
-                    userId
-                );
             }
             catch (Exception ex)
             {
@@ -65,13 +58,6 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 var result = _context.Set<T>().AddAsync(entity).Result;
                 _context.SaveChanges();
                 this.DetachEntity(entity);
-                String tablename = GetTableNameByEntityType(entity);
-                LoggingManager.NotifyLogger<T>(
-                    entity.Id,
-                    tablename,
-                    UserActivityTypeEnum.Post,
-                    userId
-                );
             }
             catch (Exception ex)
             {
@@ -91,13 +77,6 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 foreach (var entity in entities)
                 {
                     this.DetachEntity(entity);
-                    String tablename = GetTableNameByEntityType(entity);
-                    LoggingManager.NotifyLogger<T>(
-                        entity.Id,
-                        tablename,
-                        UserActivityTypeEnum.Post,
-                        userId
-                    );
                 }
             }
             catch (Exception ex)
@@ -147,22 +126,8 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
     {
         lock (thisLock)
         {
-            String tablename = GetTableNameByEntityType(entity);
-            IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
-                tablename,
-                entity.Id.ToString()
-            );
             _context.Remove<T>(entity);
             _context.SaveChanges();
-            //user_logging
-
-            LoggingManager.NotifyLogger<T>(
-                entity.Id,
-                tablename,
-                UserActivityTypeEnum.Delete,
-                userId,
-                prevEntity
-            );
         }
     }
 
@@ -172,21 +137,6 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
         {
             _context.Set<T>().RemoveRange(entities);
             _context.SaveChanges();
-            foreach (var entity in entities)
-            {
-                String tablename = GetTableNameByEntityType(entity);
-                IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
-                    tablename,
-                    entity.Id.ToString()
-                );
-                LoggingManager.NotifyLogger<T>(
-                    entity.Id,
-                    tablename,
-                    UserActivityTypeEnum.Delete,
-                    userId,
-                    prevEntity
-                );
-            }
         }
     }
 
@@ -485,24 +435,9 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
         lock (thisLock)
         {
             try{
-                String tablename = GetTableNameByEntityType(entity);
-                IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
-                    tablename,
-                    entity.Id.ToString()
-                );
                 _context.Set<T>().Update(entity);
                 _context.SaveChanges();
                 this.DetachEntity(entity);
-                this.DetachEntity(entity);
-
-                // Log the update
-                LoggingManager.NotifyLogger<T>(
-                    entity.Id,
-                    tablename,
-                    UserActivityTypeEnum.Put,
-                    userId,
-                    prevEntity
-                );
             }
             catch (Exception ex)
             {
@@ -527,20 +462,6 @@ internal class ScheduleRepository<T> : IScheduleRepository<T>
                 foreach (var entity in entities)
                 {
                     this.DetachEntity(entity);
-                    String tablename = GetTableNameByEntityType(entity);
-                    IEnumerable<dynamic> prevEntity = LoggingManager.getPreviousEntity(
-                        tablename,
-                        entity.Id.ToString()
-                    );
-
-                    // Log each update
-                    LoggingManager.NotifyLogger<T>(
-                        entity.Id,
-                        tablename,
-                        UserActivityTypeEnum.Put,
-                        userId,
-                        prevEntity
-                    );
                 }
             }
             catch(Exception ex)
