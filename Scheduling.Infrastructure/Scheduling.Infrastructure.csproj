@@ -8,7 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Common.Auditing.EntityFramework\Common.Auditing.EntityFramework.csproj" />
       <ProjectReference Include="..\..\LogsModule\LoggingModule.csproj" />
       <ProjectReference Include="..\Scheduling.Application\Scheduling.Application.csproj" />
       <ProjectReference Include="..\Scheduling.Domain\Scheduling.Domain.csproj" />

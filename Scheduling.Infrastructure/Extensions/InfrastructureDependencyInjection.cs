@@ -1,6 +1,5 @@
 
 using Application.Schedule;
-using Common.Auditing.EntityFramework;
 using Infrastructure.Schedule;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
@@ -34,7 +33,6 @@ public static class InfrastructureDependencyInjection
                         b.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                     })
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
-                .UseAuditing()
                 .EnableSensitiveDataLogging();
         }, ServiceLifetime.Scoped);
 
