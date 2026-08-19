@@ -1,5 +1,6 @@
 
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../Version.props" Condition="Exists('../../Version.props')" />
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
