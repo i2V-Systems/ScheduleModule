@@ -26,8 +26,8 @@ namespace Application.Schedule.ScheduleObj
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly INotificationManager _notificationManager;
 
-        public static ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
-        public static ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
+        public ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; } = new();
+        public ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; } = new();
 
         public ScheduleManager(IConfiguration configuration,
             IServiceProvider serviceProvider,

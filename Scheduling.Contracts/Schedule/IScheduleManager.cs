@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using CommonUtilityModule.CrudUtilities;
 using Scheduling.Contracts.AttachedResources.DTOs;
 using Scheduling.Contracts.Schedule.DTOs;
@@ -7,6 +8,11 @@ namespace Scheduling.Contracts.Schedule;
 
 public interface IScheduleManager
 {
+        // In-memory cache, formerly exposed as public static fields on the ScheduleManager
+        // class; now instance state on the singleton-registered IScheduleManager.
+        ConcurrentDictionary<Guid, ScheduleDto> Schedules { get; }
+        ConcurrentDictionary<Guid, ScheduleAllDetails> ScheduleDetailsMap { get; }
+
         // Initialization and lifecycle
          Task InitializeAsync();
 
