@@ -10,7 +10,7 @@ public class ScheduleResourceMapping :BaseEntity
 {
 
     public Guid ScheduleId { get; set; }
-    public Guid ResourceId { get; set; }
+    public string ResourceId { get; set; } = string.Empty;
 
     public Resources ResourceType { get; set; }
 
@@ -20,7 +20,7 @@ public class ScheduleResourceMapping :BaseEntity
     {
     }
 
-    public ScheduleResourceMapping(Guid resId, Guid schId, Resources type, string? data)
+    public ScheduleResourceMapping(string resId, Guid schId, Resources type, string? data)
     {
         ScheduleId = schId;
         ResourceId = resId;

@@ -49,7 +49,6 @@ public static class ScheduleModuleRegistration
     {
         services.AddContractServices(configuration);
         services.AddInfrastructureServices(configuration,config);
-        services.AddInfrastructureServices(configuration,config);
         services.AddApplicationServices(configuration);
 
 

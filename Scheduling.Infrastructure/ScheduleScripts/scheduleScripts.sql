@@ -1,22 +1,22 @@
--- Drop Schedule table if Type column is text
+-- Drop Schedules table if Type column is text
 DO $$
 BEGIN
     IF EXISTS (
         SELECT 1
         FROM information_schema.columns
         WHERE table_schema = 'public'
-          AND table_name = 'Schedule'
+          AND table_name = 'Schedules'
           AND column_name = 'Type'
           AND data_type = 'text'
     ) THEN
-        DROP TABLE IF EXISTS public."Schedule" CASCADE;
-        RAISE NOTICE 'Schedule table dropped because Type column was text type';
+        DROP TABLE IF EXISTS public."Schedules" CASCADE;
+        RAISE NOTICE 'Schedules table dropped because Type column was text type';
     END IF;
 END$$;
 
 
 -- Create Schedules table
-CREATE TABLE  IF NOT EXISTS public."Schedule" (
+CREATE TABLE  IF NOT EXISTS public."Schedules" (
                                     "Id" uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
                                     "Name" text NOT NULL,
                                     "Type" integer NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE  IF NOT EXISTS public."Schedule" (
                                     "StopCronExp" text NULL,
                                     "Status" integer NULL,
                                     "RecurringTime" timestamp without time zone NULL,
-                                    CONSTRAINT "PK_Schedule" PRIMARY KEY ("Id")
+                                    CONSTRAINT "PK_Schedules" PRIMARY KEY ("Id")
 
 );
 
@@ -39,11 +39,11 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1
         FROM pg_constraint
-        WHERE conname = 'UK_Schedule_Name'
-          AND conrelid = 'public."Schedule"'::regclass
+        WHERE conname = 'UK_Schedules_Name'
+          AND conrelid = 'public."Schedules"'::regclass
     ) THEN
-ALTER TABLE public."Schedule"
-    ADD CONSTRAINT "UK_Schedule_Name" UNIQUE ("Name");
+ALTER TABLE public."Schedules"
+    ADD CONSTRAINT "UK_Schedules_Name" UNIQUE ("Name");
 END IF;
 END;
 $$;
@@ -53,10 +53,10 @@ $$;
 CREATE TABLE  IF NOT EXISTS  public."ScheduleResourceMapping" (
     "Id" UUID PRIMARY KEY,
     "ScheduleId" UUID NOT NULL,
-    "ResourceId" UUID NOT NULL,
+    "ResourceId" VARCHAR(100) NOT NULL,
     "ResourceType" VARCHAR(50) NOT NULL,
     "metaData" text NULL,
-    FOREIGN KEY ("ScheduleId") REFERENCES public."Schedule"("Id") ON DELETE CASCADE
+    FOREIGN KEY ("ScheduleId") REFERENCES public."Schedules"("Id") ON DELETE CASCADE
 );
 ALTER TABLE public."ScheduleResourceMapping"
 DROP CONSTRAINT if exists uk_schedule_resource_type;
@@ -99,31 +99,11 @@ ALTER TABLE public."AspNetRoleClaims"
 END IF;
 END$$;
 
-DO $$
-DECLARE
-admin_role_id UUID;
-BEGIN
-    -- Get the Administrator role ID
-SELECT "Id" INTO admin_role_id
-FROM public."AspNetRoles"
-WHERE "NormalizedName" = 'ADMINISTRATOR';
 
-IF admin_role_id IS NOT NULL THEN
-        -- Insert claims for Administrator role
-        INSERT INTO public."AspNetRoleClaims" ("RoleId", "ClaimType", "ClaimValue")
-        VALUES
-            (admin_role_id, 'Rights', 'ShowScheduleTab'),
-            (admin_role_id, 'Rights', 'AddSchedule'),
-            (admin_role_id, 'Rights', 'DeleteSchedule')
-        ON CONFLICT ("RoleId", "ClaimType", "ClaimValue") DO NOTHING;
-END IF;
-END$$;
-
-
-ALTER TABLE public."Schedule"
+ALTER TABLE public."Schedules"
 ALTER COLUMN "StartDateTime" TYPE timestamp with time zone
   USING "StartDateTime" AT TIME ZONE 'UTC';
 
-ALTER TABLE public."Schedule"
+ALTER TABLE public."Schedules"
 ALTER COLUMN "EndDateTime" TYPE timestamp with time zone
   USING "EndDateTime" AT TIME ZONE 'UTC';

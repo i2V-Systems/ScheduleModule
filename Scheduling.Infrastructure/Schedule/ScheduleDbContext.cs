@@ -1,4 +1,4 @@
-﻿using Domain.AttachedResources;
+using Domain.AttachedResources;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -21,6 +21,13 @@ namespace Infrastructure.Schedule
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasDefaultSchema("public");
+
+            modelBuilder.Entity<Domain.Schedule.Schedule>()
+                .ToTable("Schedules", "public");
+
+            modelBuilder.Entity<ScheduleResourceMapping>()
+                .ToTable("ScheduleResourceMapping", "public");
             // modelBuilder.Entity<Domain.Schedule.Schedule>()
             //     .Property(e => e.Type)
             //     .HasConversion(

@@ -25,7 +25,7 @@ public static class InfrastructureDependencyInjection
         services.AddDbContext<ScheduleDbContext>(options =>
         {
             options.UseNpgsql(
-                    configuration.GetConnectionString("analytic"),
+                    configuration.GetConnectionString("CommandAndControl"),
                     b =>
                     {
                         b.MigrationsAssembly("DataLayer");

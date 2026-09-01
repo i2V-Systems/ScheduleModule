@@ -124,6 +124,7 @@ namespace Application.Schedule.ScheduleObj
             ScheduleDetailsMap.Clear();
 
             // Reload from database
+            await _scheduledEntitiesManager.RefreshCacheAsync();
             _initialized = false;
             await InitializeAsync();
         }
@@ -169,6 +170,70 @@ namespace Application.Schedule.ScheduleObj
             ScheduleAllDetails scheduleAllDetails =  GetDetailed(scheduleDto.Id);
             await SendClientNotificationWithSchedule( new List<ScheduleAllDetails>() {scheduleAllDetails},CrudMethodType.Update);
             return scheduleAllDetails;
+        }
+
+        public async Task<ScheduleAllDetails> UpdateScheduleAllDetailsAsync(ScheduleAllDetails scheduleDetails)
+        {
+            if (scheduleDetails?.schedules == null) return null!;
+
+            var updatedSchedule = await UpdateScheduleAsync(scheduleDetails.schedules);
+            var scheduleId = scheduleDetails.schedules.Id;
+
+            if (scheduleDetails.AttachedResources != null)
+            {
+                var existingInDb = _scheduledEntitiesManager.GetResourcesByScheduleId(scheduleId);
+
+                // Remove mappings no longer attached
+                foreach (var existing in existingInDb)
+                {
+                    if (!scheduleDetails.AttachedResources.Any(r => r.ResourceId == existing.ResourceId && r.ResourceType == existing.ResourceType))
+                    {
+                        await _scheduledEntitiesManager.DeleteScheduleResourceMap(existing.Id);
+                    }
+                }
+
+                // Add new resource attachments or update existing metadata
+                foreach (var resource in scheduleDetails.AttachedResources)
+                {
+                    var existing = existingInDb.FirstOrDefault(e => e.ResourceId == resource.ResourceId && e.ResourceType == resource.ResourceType);
+                    if (existing == null)
+                    {
+                        var resourceMap = new ScheduleResourceDto(
+                            Guid.NewGuid(),
+                            scheduleId,
+                            resource.ResourceId,
+                            resource.ResourceType,
+                            resource.metaData
+                        );
+                        await _scheduledEntitiesManager.AddScheduleResourceMap(resourceMap);
+                    }
+                    else
+                    {
+                        if (existing.metaData != resource.metaData)
+                        {
+                            var updatedResourceMap = new ScheduleResourceDto(
+                                existing.Id,
+                                scheduleId,
+                                existing.ResourceId,
+                                existing.ResourceType,
+                                resource.metaData
+                            );
+                            await _scheduledEntitiesManager.UpdateScheduleResourceMap(updatedResourceMap);
+                        }
+                    }
+                }
+            }
+
+            var latestResources = _scheduledEntitiesManager.GetResourcesByScheduleId(scheduleId);
+            var finalDetails = new ScheduleAllDetails
+            {
+                schedules = scheduleDetails.schedules,
+                AttachedResources = latestResources
+            };
+            AddOrUpdateScheduleDetails(finalDetails);
+
+            await SendClientNotificationWithSchedule(new List<ScheduleAllDetails>() { finalDetails }, CrudMethodType.Update);
+            return finalDetails;
         }
 
         public async Task DeleteScheduleAsync(Guid id)

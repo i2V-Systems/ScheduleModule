@@ -41,7 +41,7 @@ public static class SchedulerServiceExtensions
                 s.RetryInterval = TimeSpan.FromSeconds(15);
                 s.UsePostgres(cfg =>
                     {
-                        cfg.ConnectionString = configuration.GetConnectionString("analytic");
+                        cfg.ConnectionString = configuration.GetConnectionString("CommandAndControl");
                         cfg.TablePrefix = "scheduler.qrtz_";
                     },
                     dataSourceName: "schedulers");
@@ -55,6 +55,7 @@ public static class SchedulerServiceExtensions
             });
             // Set misfire threshold
             q.MisfireThreshold=TimeSpan.FromSeconds(30);
+            q.AddTriggerListener<ScheduleTriggerListener>();
         });
         // Add Quartz.NET as a hosted service
         services.AddQuartzHostedService(options =>

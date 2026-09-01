@@ -28,6 +28,7 @@ public interface IScheduleManager
         ScheduleAllDetails GetDetailed(Guid id);
         Task<ScheduleAllDetails> CreateScheduleAsync(ScheduleDto dto);
         Task<ScheduleAllDetails> UpdateScheduleAsync(ScheduleDto dto);
+        Task<ScheduleAllDetails> UpdateScheduleAllDetailsAsync(ScheduleAllDetails scheduleDetails);
         Task DeleteScheduleAsync(Guid id);
         Task SendClientNotificationWithSchedule(List<ScheduleAllDetails> scheduleAllDetails,
           CrudMethodType methodType);

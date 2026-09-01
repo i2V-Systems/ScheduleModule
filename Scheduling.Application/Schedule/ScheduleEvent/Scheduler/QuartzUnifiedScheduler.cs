@@ -39,7 +39,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnEveryDay()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .WithMisfireHandlingInstructionFireAndProceed())
+                        .WithMisfireHandlingInstructionDoNothing())
                     , cancellationToken);
         }
         catch (Exception ex)
@@ -86,7 +86,8 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
             // Configure the trigger
             var triggerBuilder = TriggerBuilder.Create()
                 .WithIdentity(triggerKey, "DEFAULT")  // ← ADD GROUP HERE
-                .ForJob(jobKey, "DEFAULT"); // ← SPECIFY JOB GROUP
+                .ForJob(jobKey, "DEFAULT") // ← SPECIFY JOB GROUP
+                .UsingJobData("scheduleId", metadata.scheduleId.ToString());
             var trigger = configureTrigger(triggerBuilder).Build();
 
             await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -126,7 +127,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnMondayThroughFriday()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .WithMisfireHandlingInstructionFireAndProceed())
+                        .WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -164,7 +165,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
                         .OnSaturdayAndSunday()
                         .WithIntervalInHours(24)
                         .InTimeZone(utcTimeZone)
-                        .WithMisfireHandlingInstructionFireAndProceed())
+                        .WithMisfireHandlingInstructionDoNothing())
                     .Build();
 
                 await scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -205,7 +206,7 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
             return await ScheduleJobsAsync(topics, metadata, trigger =>
                         trigger.WithCronSchedule(cronExpression, x => x
                             .InTimeZone(utcTimeZone)
-                            .WithMisfireHandlingInstructionFireAndProceed())
+                            .WithMisfireHandlingInstructionDoNothing())
                     , cancellationToken);
         }
         catch (Exception ex)

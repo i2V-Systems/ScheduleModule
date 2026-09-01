@@ -5,10 +5,10 @@ using Scheduling.Contracts.Schedule.DTOs;
 namespace Scheduling.Contracts.AttachedResources.DTOs;
 
 public record ScheduleResourceDto(
-    Guid Id, Guid ScheduleId, Guid ResourceId, Resources ResourceType,string? metaData);
+    Guid Id, Guid ScheduleId, string ResourceId, Resources ResourceType,string? metaData);
 
 public record DetachScheduleResourceDto(
-  Guid ScheduleId, Guid ResourceId);
+  Guid ScheduleId, string ResourceId);
 
 public record DetachScheduleRequest(List<Guid> Ids, ScheduleAllDetails Schedule);
 

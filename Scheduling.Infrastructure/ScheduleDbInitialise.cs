@@ -24,7 +24,7 @@ public static class ScheduleDbInitialise
 #endif
 
       string script = File.ReadAllText(path);
-      using (connection = new NpgsqlConnection(configuration.GetConnectionString("analytic")))
+      using (connection = new NpgsqlConnection(configuration.GetConnectionString("CommandAndControl")))
       {
         connection.Open();
         using (var command = new NpgsqlCommand(script, connection))

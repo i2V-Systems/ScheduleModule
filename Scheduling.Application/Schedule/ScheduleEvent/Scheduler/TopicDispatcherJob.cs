@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using Quartz;
 using Scheduling.Contracts;
 using Scheduling.Contracts.AttachedResources.Enums;
+using Scheduling.Contracts.Schedule;
+using Scheduling.Contracts.Schedule.Enums;
 using Scheduling.Contracts.Schedule.ScheduleEvent;
 using Serilog;
 using TanvirArjel.Extensions.Microsoft.DependencyInjection;
@@ -69,8 +71,18 @@ public class TopicDispatcherJob : IJob
             // Parse topics from JSON
             var topicStrings = JsonConvert.DeserializeObject<List<string>>(topicsJson) ?? new List<string>();
 
-            //Fetch topic string from DB as during new schedule ,  topic is null
+            // Check if schedule is disabled before executing
             using var scope = _serviceProvider.CreateScope();
+            var scheduleManager = scope.ServiceProvider.GetService<IScheduleManager>();
+            if (scheduleManager != null)
+            {
+                var currentSched = scheduleManager.GetScheduleFromCache(scheduleId);
+                if (currentSched != null && (currentSched.Status == ScheduleStatus.Disabled || currentSched.Status == ScheduleStatus.InActive))
+                {
+                    return;
+                }
+            }
+
             var resourceService = scope.ServiceProvider.GetRequiredService<ResourceMappingService>();
             topicStrings = (await resourceService.GetAttachedResourceStringsAsync(scheduleId)).Split(',').ToList();
 
@@ -90,7 +102,10 @@ public class TopicDispatcherJob : IJob
             }
 
             var eventTrigger = new ScheduleEventTrigger(scheduleId, eventType);
-            var handlers = _serviceProvider.GetServices<ITopicAwareJobHandler>().ToList();
+            var handlers = scope.ServiceProvider.GetServices<ITopicAwareJobHandler>()
+                .GroupBy(h => h.GetType())
+                .Select(g => g.First())
+                .ToList();
             var interestedHandlers = new List<ITopicAwareJobHandler>();
 
             foreach (var handler in handlers)

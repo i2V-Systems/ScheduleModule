@@ -121,7 +121,7 @@ namespace Presentation.Controllers
                         code = "DUPLICATE_NAME"
                     });
                 }
-                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAsync(schedule.schedules);
+                ScheduleAllDetails scheduleAllDetails = await _scheduleManager.UpdateScheduleAllDetailsAsync(schedule);
                 return Ok(scheduleAllDetails);
             }
             catch (Exception ex)

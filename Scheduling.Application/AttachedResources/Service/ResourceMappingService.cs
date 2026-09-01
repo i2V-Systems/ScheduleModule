@@ -29,7 +29,14 @@ public class ResourceMappingService :IScheduleResourceService
         if (httpContext != null &&
             httpContext.Request.Headers.TryGetValue("Userid", out var userId))
         {
-            _userId = Guid.Parse(userId);
+            if (Guid.TryParse(userId, out var parsedGuid))
+            {
+                _userId = parsedGuid;
+            }
+            else
+            {
+                _userId = Guid.Empty;
+            }
         }
     }
 
