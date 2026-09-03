@@ -220,30 +220,16 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
     {
         try
         {
-            var utcTimeZone = TimeZoneInfo.Utc;
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            var jobIds = new List<string>();
+            var executeAtOffset = executeAt.Kind == DateTimeKind.Utc
+                ? new DateTimeOffset(executeAt, TimeSpan.Zero)
+                : new DateTimeOffset(DateTime.SpecifyKind(executeAt, DateTimeKind.Utc), TimeSpan.Zero);
 
-            foreach (var topic in topics)
-            {
-                var jobKey = _jobKeyGenerator.GenerateJobKey(topic, metadata);
-                var triggerKey = _jobKeyGenerator.GenerateTriggerKey(topic, metadata);
-
-                var job = CreateJob(jobKey, metadata);
-                var trigger = TriggerBuilder.Create()
-                    .WithIdentity(triggerKey, "DEFAULT")
-                    .ForJob(jobKey, "DEFAULT")
-                    .StartAt(executeAt)
-                    .WithSimpleSchedule(x=>x
-                        .WithRepeatCount(0)
-                    )
-                    .Build();
-
-                await scheduler.ScheduleJob(job, trigger, cancellationToken);
-                jobIds.Add(jobKey);
-            }
-
-            return ScheduleResult.Success(jobIds);
+            return await ScheduleJobsAsync(topics, metadata, trigger =>
+                    trigger.StartAt(executeAtOffset)
+                           .WithSimpleSchedule(x => x
+                               .WithRepeatCount(0)
+                               .WithMisfireHandlingInstructionNextWithRemainingCount())
+                    , cancellationToken);
         }
         catch (Exception ex)
         {

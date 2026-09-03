@@ -176,7 +176,11 @@ namespace Application.Schedule.ScheduleObj
         {
             if (scheduleDetails?.schedules == null) return null!;
 
-            var updatedSchedule = await UpdateScheduleAsync(scheduleDetails.schedules);
+            using var scope = _serviceProvider.CreateScope();
+            var crudService = scope.ServiceProvider.GetRequiredService<ScheduleCrudService>();
+            await crudService.UpdateAsync(scheduleDetails.schedules);
+            UpdateInMemory(scheduleDetails.schedules);
+
             var scheduleId = scheduleDetails.schedules.Id;
 
             if (scheduleDetails.AttachedResources != null)
@@ -223,6 +227,9 @@ namespace Application.Schedule.ScheduleObj
                     }
                 }
             }
+
+            // Trigger scheduler update AFTER resources are saved to database and in-memory cache
+            await _scheduleEventManager.UpdateAsync(scheduleDetails.schedules);
 
             var latestResources = _scheduledEntitiesManager.GetResourcesByScheduleId(scheduleId);
             var finalDetails = new ScheduleAllDetails
