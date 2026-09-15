@@ -5,6 +5,7 @@ using Infrastructure;
 using AutoMapper;
 using Infrastructure;
 using Infrastructure.Extensions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Extensions;
@@ -38,10 +39,10 @@ public static class ScheduleModuleRegistration
         await ApplicationDependencyInjection.InitialiseManagers(serviceProvider);
     }
 
-    public static void StartSeedingData(IConfiguration configuration)
+    public static void StartSeedingData(IConfiguration configuration, IWebHostEnvironment env)
     {
-      ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", configuration);
-      ScheduleDbInitialise.scheduleDbInitialise("quartz.sql", configuration);
+      ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", configuration,env);
+      ScheduleDbInitialise.scheduleDbInitialise("quartz.sql", configuration,env);
 
     }
 
