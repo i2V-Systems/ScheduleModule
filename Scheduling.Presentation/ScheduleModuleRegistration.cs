@@ -5,6 +5,7 @@ using Infrastructure;
 using AutoMapper;
 using Infrastructure;
 using Infrastructure.Extensions;
+using CommonUtilityModule.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Presentation.Extensions;
@@ -26,8 +27,7 @@ public static class ScheduleModuleRegistration
 
 
     public static IServiceCollection AddSchedulingModule(
-        this IServiceCollection services,
-        IConfiguration configuration)
+        this IServiceCollection services)
     {
         return services;
     }
@@ -38,18 +38,17 @@ public static class ScheduleModuleRegistration
         await ApplicationDependencyInjection.InitialiseManagers(serviceProvider);
     }
 
-    public static void StartSeedingData(IConfiguration configuration)
+    public static void StartSeedingData(ConnectionStringOptions connectionStrings)
     {
-      ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", configuration);
-      ScheduleDbInitialise.scheduleDbInitialise("quartz.sql", configuration);
+      ScheduleDbInitialise.scheduleDbInitialise("scheduleScripts.sql", connectionStrings.analytic);
+      ScheduleDbInitialise.scheduleDbInitialise("quartz.sql", connectionStrings.analytic);
 
     }
 
-    public static void ConfigureSchedulingServices(this IServiceCollection services, IConfiguration configuration,MapperConfigurationExpression config)
+    public static void ConfigureSchedulingServices(this IServiceCollection services,MapperConfigurationExpression config, IConfiguration configuration)
     {
-        services.AddContractServices(configuration);
-        services.AddInfrastructureServices(configuration,config);
-        services.AddInfrastructureServices(configuration,config);
+        services.AddContractServices();
+        services.AddInfrastructureServices(config);
         services.AddApplicationServices(configuration);
 
 

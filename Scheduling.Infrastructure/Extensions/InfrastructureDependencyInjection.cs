@@ -3,8 +3,9 @@ using Application.Schedule;
 using Infrastructure.Schedule;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-using Microsoft.Extensions.Configuration;
+using CommonUtilityModule.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Pgvector.EntityFrameworkCore;
 using Scheduling.Contracts;
@@ -17,15 +18,15 @@ public static class InfrastructureDependencyInjection
 
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services,
-        IConfiguration configuration,
         MapperConfigurationExpression config)
     {
         config.AddProfile(new MappingProfile());
         // Database Context
-        services.AddDbContext<ScheduleDbContext>(options =>
+        services.AddDbContext<ScheduleDbContext>((serviceProvider, options) =>
         {
+            var connectionStrings = serviceProvider.GetRequiredService<IOptions<ConnectionStringOptions>>().Value;
             options.UseNpgsql(
-                    configuration.GetConnectionString("analytic"),
+                    connectionStrings.analytic,
                     b =>
                     {
                         b.MigrationsAssembly("DataLayer");

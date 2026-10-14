@@ -7,7 +7,7 @@ namespace Infrastructure;
 public static class ScheduleDbInitialise
 {
   private static NpgsqlConnection connection;
-  public  static void scheduleDbInitialise(String scriptPath, IConfiguration configuration)
+  public  static void scheduleDbInitialise(String scriptPath, string connectionString)
   {
     try
     {
@@ -24,7 +24,7 @@ public static class ScheduleDbInitialise
 #endif
 
       string script = File.ReadAllText(path);
-      using (connection = new NpgsqlConnection(configuration.GetConnectionString("analytic")))
+      using (connection = new NpgsqlConnection(connectionString))
       {
         connection.Open();
         using (var command = new NpgsqlCommand(script, connection))
