@@ -193,8 +193,14 @@ public class QuartzUnifiedScheduler :IUnifiedScheduler
 
     public async Task<ScheduleResult> ScheduleMonthlyAsync(IReadOnlyList<Resources> topics, ScheduleEventTrigger metadata, int day, TimeOnly time, CancellationToken cancellationToken = default)
     {
-        var cronExpression = $"0 {time.Minute} {time.Hour} {day} * ?";
-        return await ScheduleCronAsync(topics, metadata, cronExpression, cancellationToken);
+        // If day is 31 (or higher), use Quartz 'L' wildcard to run on the last day of each month (e.g. Feb 28/29, Apr 30)
+        var dayField = day >= 31 ? "L" : Math.Max(1, day).ToString();
+        var cronExpression = $"0 {time.Minute} {time.Hour} {dayField} * ?";
+        var localZone = TimeZoneInfo.Local;
+        return await ScheduleJobsAsync(topics, metadata, trigger =>
+            trigger.WithCronSchedule(cronExpression, x => x
+                .InTimeZone(localZone)
+                .WithMisfireHandlingInstructionDoNothing()), cancellationToken);
     }
 
     public async Task<ScheduleResult> ScheduleCronAsync(IReadOnlyList<Resources> topics, ScheduleEventTrigger metadata, string cronExpression, CancellationToken cancellationToken = default)

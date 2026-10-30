@@ -82,7 +82,9 @@ namespace Application.Schedule.ScheduleEvent.ScheduleDispatcher
 
         public static string BuildMonthlyCronExpression(DateTime time, int dayOfMonth)
         {
-            return $"0 {time.Minute} {time.Hour} {dayOfMonth} * ?";
+            // If day is 31 (or greater), use 'L' so it runs on the last day of each month (e.g. Feb 28/29, Apr 30)
+            var dayField = dayOfMonth >= 31 ? "L" : Math.Max(1, dayOfMonth).ToString();
+            return $"0 {time.Minute} {time.Hour} {dayField} * ?";
         }
     }
 }
