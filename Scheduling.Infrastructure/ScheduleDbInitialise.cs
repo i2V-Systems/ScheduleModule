@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 using Serilog;
@@ -7,14 +8,14 @@ namespace Infrastructure;
 public static class ScheduleDbInitialise
 {
   private static NpgsqlConnection connection;
-  public  static void scheduleDbInitialise(String scriptPath, IConfiguration configuration)
+  public  static void scheduleDbInitialise(String scriptPath, IConfiguration configuration, IWebHostEnvironment environment)
   {
     try
     {
       var path = "";
 #if DEBUG
       path = System.IO.Path.Combine(
-        System.IO.Directory.GetCurrentDirectory(),
+        environment.ContentRootPath,
         "../ScheduleModule/Scheduling.Infrastructure",
         "ScheduleScripts",
         scriptPath
